@@ -75,4 +75,32 @@ BEGIN
 	:p_creado_en , :p_modificado_en
 DO 
 SUSPEND;
+END 
+
+CREATE PROCEDURE sp_eliminar_usuario(p_id_usuario integer, p_usuario varchar(100))
+AS 
+BEGIN 
+	UPDATE "usuario"
+	SET "estado" = FALSE
+	, "modificado_por" = :p_usuario
+	WHERE "id_usuario" = :p_id_usuario;
+END
+
+CREATE PROCEDURE sp_actualizar_usuario(
+p_id_usuario integer,
+usuario varchar(50),
+p_nombres varchar(100),
+p_apellidos varchar(100),
+p_correo_electronico varchar(150),
+p_salario_mensual_base NUMERIC(12,2)
+)
+AS 
+BEGIN 
+	UPDATE "usuario"
+	SET "nombres" = COALESCE(:p_nombres,"nombres")
+	, "apellidos" = COALESCE(:p_apellidos,"apellidos")
+	, "correo_electronico" = COALESCE(:p_correo_electronico,"correo_electronico")
+	, "salario_mensual_base" = COALESCE(:p_salario_mensual_base,"salario_mensual_base")
+	, "modificado_por" = :usuario
+	WHERE "id_usuario" = :p_id_usuario;
 END

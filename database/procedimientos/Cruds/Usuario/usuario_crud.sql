@@ -1,8 +1,4 @@
---Crud Usuario
-
-SET TERM ^ ;
-
-CREATE OR REPLACE PROCEDURE sp_insertar_usuario (
+CREATE PROCEDURE sp_insertar_usuario (
     p_nombres VARCHAR(100),
     p_apellidos VARCHAR(100),
     p_correo_electronico VARCHAR(150),
@@ -38,9 +34,9 @@ BEGIN
         :p_creado_por,
         CURRENT_TIMESTAMP
     );
-END^
+END
 
-CREATE OR REPLACE PROCEDURE sp_consultar_usuario (
+CREATE PROCEDURE sp_consultar_usuario (
     p_id_usuario INTEGER
 )
 RETURNS (
@@ -67,9 +63,9 @@ BEGIN
         :p_nombres, :p_apellidos, :p_correo_electronico,
         :p_fecha_registro, :p_salario_mensual_base, :p_estado,
         :p_creado_por, :p_modificado_por, :p_creado_en, :p_modificado_en;
-END^
+END
 
-CREATE OR REPLACE PROCEDURE sp_listar_usuarios
+CREATE PROCEDURE sp_listar_usuarios
 RETURNS (
     p_id_usuario INTEGER,
     p_nombres VARCHAR(100),
@@ -98,22 +94,9 @@ BEGIN
     BEGIN
         SUSPEND;
     END
-END^
+END
 
-CREATE OR REPLACE PROCEDURE sp_eliminar_usuario (
-    p_id_usuario INTEGER,
-    p_usuario VARCHAR(100)
-)
-AS
-BEGIN
-    UPDATE "usuario"
-    SET "estado" = FALSE,
-        "modificado_por" = :p_usuario,
-        "modificado_en" = CURRENT_TIMESTAMP
-    WHERE "id_usuario" = :p_id_usuario;
-END^
-
-CREATE OR REPLACE PROCEDURE sp_actualizar_usuario (
+CREATE PROCEDURE sp_actualizar_usuario (
     p_id_usuario INTEGER,
     usuario VARCHAR(50),
     p_nombres VARCHAR(100),
@@ -131,6 +114,17 @@ BEGIN
         "modificado_por" = :usuario,
         "modificado_en" = CURRENT_TIMESTAMP
     WHERE "id_usuario" = :p_id_usuario;
-END^
+END
 
-SET TERM ; ^
+CREATE PROCEDURE sp_eliminar_usuario (
+    p_id_usuario INTEGER,
+    p_usuario VARCHAR(100)
+)
+AS
+BEGIN
+    UPDATE "usuario"
+    SET "estado" = FALSE,
+        "modificado_por" = :p_usuario,
+        "modificado_en" = CURRENT_TIMESTAMP
+    WHERE "id_usuario" = :p_id_usuario;
+END

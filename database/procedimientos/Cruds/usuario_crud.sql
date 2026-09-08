@@ -34,7 +34,7 @@ BEGIN
         :p_creado_por,
         CURRENT_TIMESTAMP
     );
-END
+END;
 
 CREATE PROCEDURE sp_consultar_usuario (
     p_id_usuario INTEGER
@@ -63,7 +63,7 @@ BEGIN
         :p_nombres, :p_apellidos, :p_correo_electronico,
         :p_fecha_registro, :p_salario_mensual_base, :p_estado,
         :p_creado_por, :p_modificado_por, :p_creado_en, :p_modificado_en;
-END
+END;
 
 CREATE PROCEDURE sp_listar_usuarios
 RETURNS (
@@ -94,7 +94,7 @@ BEGIN
     BEGIN
         SUSPEND;
     END
-END
+END;
 
 CREATE PROCEDURE sp_actualizar_usuario (
     p_id_usuario INTEGER,
@@ -114,7 +114,7 @@ BEGIN
         "modificado_por" = :usuario,
         "modificado_en" = CURRENT_TIMESTAMP
     WHERE "id_usuario" = :p_id_usuario;
-END
+END;
 
 CREATE PROCEDURE sp_eliminar_usuario (
     p_id_usuario INTEGER,
@@ -127,4 +127,4 @@ BEGIN
         "modificado_por" = :p_usuario,
         "modificado_en" = CURRENT_TIMESTAMP
     WHERE "id_usuario" = :p_id_usuario;
-END
+END;

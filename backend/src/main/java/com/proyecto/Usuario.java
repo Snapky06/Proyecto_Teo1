@@ -5,7 +5,6 @@ import java.sql.Date;
 import java.sql.Timestamp;
 
 public class Usuario {
-
     private Integer id;
     private String nombres;
     private String apellidos;
@@ -30,7 +29,6 @@ public class Usuario {
         this.creadoPor = creadoPor;
     }
 
-    // Métodos para leer y asignar valores
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
 

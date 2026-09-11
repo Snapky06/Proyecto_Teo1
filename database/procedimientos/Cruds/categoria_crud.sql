@@ -58,16 +58,37 @@ RETURNS (
 )
 AS
 BEGIN
-    SELECT 
-        "id_usuario", "nombre", "descripcion", "tipo",
-        "icono", "color_hex", "orden_presentacion",
-        "creado_por", "modificado_por", "creado_en", "modificado_en"
+    p_id_usuario = NULL;
+
+    SELECT
+        "id_usuario",
+        "nombre",
+        "descripcion",
+        "tipo",
+        "icono",
+        "color_hex",
+        "orden_presentacion",
+        "creado_por",
+        "modificado_por",
+        "creado_en",
+        "modificado_en"
     FROM "categoria"
     WHERE "id_categoria" = :p_id_categoria
-    INTO 
-        :p_id_usuario, :p_nombre, :p_descripcion, :p_tipo,
-        :p_icono, :p_color_hex, :p_orden_presentacion,
-        :p_creado_por, :p_modificado_por, :p_creado_en, :p_modificado_en;
+    INTO
+        :p_id_usuario,
+        :p_nombre,
+        :p_descripcion,
+        :p_tipo,
+        :p_icono,
+        :p_color_hex,
+        :p_orden_presentacion,
+        :p_creado_por,
+        :p_modificado_por,
+        :p_creado_en,
+        :p_modificado_en;
+
+    IF (p_id_usuario IS NOT NULL) THEN
+        SUSPEND;
 END
 
 CREATE PROCEDURE sp_listar_categorias (

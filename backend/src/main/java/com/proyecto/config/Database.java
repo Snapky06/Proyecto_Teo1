@@ -1,11 +1,13 @@
-package com.proyecto;
+package com.proyecto.config;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class Database {
-    private static final String URL = "jdbc:interbase://localhost/C:/InterBase/data/gestion_financiera.IB";
+    private static final String URL =
+            "jdbc:interbase://localhost/C:/InterBase/data/gestion_financiera.IB";
+
     private static final String USUARIO = "SYSDBA";
     private static final String CLAVE = "masterkey";
 
@@ -15,6 +17,7 @@ public class Database {
         } catch (ClassNotFoundException e) {
             System.out.println("No se encontro el driver de InterBase.");
         }
+
         return DriverManager.getConnection(URL, USUARIO, CLAVE);
     }
 }

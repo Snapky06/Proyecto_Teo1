@@ -1,6 +1,7 @@
 package com.proyecto;
 
 import com.proyecto.categoria.CategoriaDAO;
+import com.proyecto.subcategoria.SubcategoriaDAO;
 import com.proyecto.usuario.UsuarioDAO;
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -11,11 +12,13 @@ public class Menu {
     private final Scanner scanner;
     private final UsuarioDAO usuarioDAO;
     private final CategoriaDAO categoriaDAO;
+    private final SubcategoriaDAO subcategoriaDAO;
 
     public Menu() {
         scanner = new Scanner(System.in);
         usuarioDAO = new UsuarioDAO();
         categoriaDAO = new CategoriaDAO();
+        subcategoriaDAO = new SubcategoriaDAO();
     }
 
     public void iniciar() {
@@ -25,7 +28,8 @@ public class Menu {
             System.out.println("\n=== SISTEMA DE PRESUPUESTO PERSONAL ===");
             System.out.println("1. Gestionar Usuarios");
             System.out.println("2. Gestionar Categorias");
-            System.out.println("3. Gestionar Presupuestos (Proximamente)");
+            System.out.println("3. Gestionar Subcategorias");
+            System.out.println("4. Gestionar Presupuestos (Proximamente)");
             System.out.println("0. Salir del programa");
 
             int opcion = leerEntero("Elige una opcion: ");
@@ -40,12 +44,18 @@ public class Menu {
                     break;
 
                 case 3:
+                    menuSubcategorias();
+                    break;
+
+                case 4:
                     System.out.println("Modulo en construccion.");
                     break;
 
                 case 0:
                     salir = true;
-                    System.out.println("Saliendo del sistema. Hasta pronto!");
+                    System.out.println(
+                            "Saliendo del sistema. Hasta pronto!"
+                    );
                     break;
 
                 default:
@@ -81,8 +91,11 @@ public class Menu {
                     System.out.print("Correo: ");
                     String correo = scanner.nextLine();
 
-                    BigDecimal salario = leerDecimal("Salario base: ");
-                    Date fecha = new Date(System.currentTimeMillis());
+                    BigDecimal salario =
+                            leerDecimal("Salario base: ");
+
+                    Date fecha =
+                            new Date(System.currentTimeMillis());
 
                     usuarioDAO.insertarUsuario(
                             nombres,
@@ -135,7 +148,10 @@ public class Menu {
                     int idEliminar =
                             leerEntero("ID del usuario a eliminar: ");
 
-                    usuarioDAO.eliminarUsuario(idEliminar, "ADMIN");
+                    usuarioDAO.eliminarUsuario(
+                            idEliminar,
+                            "ADMIN"
+                    );
                     break;
 
                 case 0:
@@ -178,7 +194,9 @@ public class Menu {
                     int idCategoriaConsulta =
                             leerEntero("ID de la categoria: ");
 
-                    categoriaDAO.consultarCategoria(idCategoriaConsulta);
+                    categoriaDAO.consultarCategoria(
+                            idCategoriaConsulta
+                    );
                     break;
 
                 case 4:
@@ -190,10 +208,11 @@ public class Menu {
                             leerEntero("ID de la categoria: ");
 
                     System.out.println(
-                            "La categoria y sus subcategorias seran eliminadas."
+                            "La categoria y sus subcategorias "
+                                    + "seran eliminadas."
                     );
-
                     System.out.print("Desea continuar? Escriba SI: ");
+
                     String confirmacion = scanner.nextLine();
 
                     if (confirmacion.equalsIgnoreCase("SI")) {
@@ -216,12 +235,15 @@ public class Menu {
     }
 
     private void registrarCategoria() {
-        int idUsuario = leerEntero("ID del usuario propietario: ");
+        int idUsuario =
+                leerEntero("ID del usuario propietario: ");
 
         System.out.println(
-                "El tipo indica si la categoria pertenece a ingresos o gastos."
+                "El tipo indica si es una categoria de ingresos "
+                        + "o gastos."
         );
         System.out.println("Opciones validas: INGRESO o GASTO");
+
         String tipo = leerTipo();
 
         System.out.print("Nombre de la categoria: ");
@@ -231,19 +253,24 @@ public class Menu {
         String descripcion = scanner.nextLine();
 
         System.out.println(
-                "El icono es un texto corto como comida, casa o transporte."
+                "El icono puede ser comida, casa o transporte."
         );
-        System.out.print("Icono opcional, presione Enter para dejarlo vacio: ");
+        System.out.print(
+                "Icono opcional, presione Enter para dejarlo vacio: "
+        );
         String icono = scanner.nextLine();
 
         System.out.println(
-                "El color debe usar el formato #RRGGBB, por ejemplo #FF0000."
+                "El color debe tener el formato #RRGGBB."
         );
+        System.out.println("Ejemplo: #FF0000");
+
         String colorHex = leerColor();
 
         System.out.println(
-                "El orden indica la posicion de la categoria en las listas."
+                "El orden indica la posicion en las listas."
         );
+
         short orden = leerOrden();
 
         categoriaDAO.insertarCategoria(
@@ -265,6 +292,7 @@ public class Menu {
         System.out.println(
                 "Opciones validas para el tipo: INGRESO o GASTO"
         );
+
         String tipo = leerTipo();
 
         System.out.print("Nuevo nombre: ");
@@ -279,8 +307,10 @@ public class Menu {
         String icono = scanner.nextLine();
 
         System.out.println(
-                "El color debe usar el formato #RRGGBB, por ejemplo #FF0000."
+                "El color debe tener el formato #RRGGBB."
         );
+        System.out.println("Ejemplo: #FF0000");
+
         String colorHex = leerColor();
 
         short orden = leerOrden();
@@ -297,12 +327,132 @@ public class Menu {
         );
     }
 
+    private void menuSubcategorias() {
+        boolean salir = false;
+
+        while (!salir) {
+            System.out.println("\n--- MENU DE SUBCATEGORIAS ---");
+            System.out.println("1. Registrar Subcategoria");
+            System.out.println("2. Listar Subcategorias");
+            System.out.println("3. Consultar Subcategoria por ID");
+            System.out.println("4. Actualizar Subcategoria");
+            System.out.println("5. Eliminar Subcategoria");
+            System.out.println("0. Volver");
+
+            int opcion = leerEntero("Elige una opcion: ");
+
+            switch (opcion) {
+                case 1:
+                    registrarSubcategoria();
+                    break;
+
+                case 2:
+                    int idCategoriaLista =
+                            leerEntero("ID de la categoria: ");
+
+                    subcategoriaDAO.listarSubcategorias(
+                            idCategoriaLista
+                    );
+                    break;
+
+                case 3:
+                    int idSubcategoriaConsulta =
+                            leerEntero(
+                                    "ID de la subcategoria: "
+                            );
+
+                    subcategoriaDAO.consultarSubcategoria(
+                            idSubcategoriaConsulta
+                    );
+                    break;
+
+                case 4:
+                    actualizarSubcategoria();
+                    break;
+
+                case 5:
+                    int idSubcategoriaEliminar =
+                            leerEntero(
+                                    "ID de la subcategoria: "
+                            );
+
+                    System.out.println(
+                            "La subcategoria sera eliminada."
+                    );
+                    System.out.print(
+                            "Desea continuar? Escriba SI: "
+                    );
+
+                    String confirmacion = scanner.nextLine();
+
+                    if (confirmacion.equalsIgnoreCase("SI")) {
+                        subcategoriaDAO.eliminarSubcategoria(
+                                idSubcategoriaEliminar
+                        );
+                    } else {
+                        System.out.println(
+                                "Operacion cancelada."
+                        );
+                    }
+                    break;
+
+                case 0:
+                    salir = true;
+                    break;
+
+                default:
+                    System.out.println("Opcion no valida.");
+            }
+        }
+    }
+
+    private void registrarSubcategoria() {
+        int idCategoria =
+                leerEntero("ID de la categoria: ");
+
+        System.out.print("Nombre de la subcategoria: ");
+        String nombre = scanner.nextLine();
+
+        System.out.print("Descripcion de la subcategoria: ");
+        String descripcion = scanner.nextLine();
+
+        subcategoriaDAO.insertarSubcategoria(
+                idCategoria,
+                nombre,
+                descripcion,
+                "ADMIN"
+        );
+    }
+
+    private void actualizarSubcategoria() {
+        int idSubcategoria =
+                leerEntero(
+                        "ID de la subcategoria a actualizar: "
+                );
+
+        System.out.print("Nuevo nombre: ");
+        String nombre = scanner.nextLine();
+
+        System.out.print("Nueva descripcion: ");
+        String descripcion = scanner.nextLine();
+
+        subcategoriaDAO.actualizarSubcategoria(
+                idSubcategoria,
+                nombre,
+                descripcion,
+                "ADMIN"
+        );
+    }
+
     private String leerTipo() {
         while (true) {
             System.out.print("Tipo: ");
-            String tipo = scanner.nextLine().trim().toUpperCase();
+            String tipo = scanner.nextLine()
+                    .trim()
+                    .toUpperCase();
 
-            if (tipo.equals("INGRESO") || tipo.equals("GASTO")) {
+            if (tipo.equals("INGRESO")
+                    || tipo.equals("GASTO")) {
                 return tipo;
             }
 
@@ -333,7 +483,10 @@ public class Menu {
 
     private short leerOrden() {
         while (true) {
-            System.out.print("Orden de presentacion, use un numero como 1: ");
+            System.out.print(
+                    "Orden de presentacion, use un numero como 1: "
+            );
+
             String entrada = scanner.nextLine();
 
             try {

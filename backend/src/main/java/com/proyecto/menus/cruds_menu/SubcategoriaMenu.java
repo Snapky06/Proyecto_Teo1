@@ -1,8 +1,9 @@
-package com.proyecto.menus;
+package com.proyecto.menus.cruds_menu;
 
 import java.util.Scanner;
 
 import com.proyecto.cruds.SubcategoriaDAO;
+import com.proyecto.menus.MenuHelper;
 
 public class SubcategoriaMenu {
 

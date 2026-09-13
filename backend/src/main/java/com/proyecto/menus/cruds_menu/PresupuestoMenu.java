@@ -1,10 +1,11 @@
-package com.proyecto.menus;
+package com.proyecto.menus.cruds_menu;
 
 import java.math.BigDecimal;
 import java.util.Scanner;
 
 import com.proyecto.cruds.PresupuestoDAO;
 import com.proyecto.cruds.PresupuestoDetalleDAO;
+import com.proyecto.menus.MenuHelper;
 
 public class PresupuestoMenu {
 

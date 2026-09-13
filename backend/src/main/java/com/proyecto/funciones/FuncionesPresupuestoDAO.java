@@ -4,6 +4,7 @@ import com.proyecto.config.Database;
 import java.math.BigDecimal;
 import java.sql.CallableStatement;
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.ResultSet;
 
 public class FuncionesPresupuestoDAO {
@@ -32,7 +33,6 @@ public class FuncionesPresupuestoDAO {
                     return rs.getBigDecimal("p_porcentaje");
                 }
             }
-
         } catch (Exception e) {
             System.out.println(
                     "Error al calcular el porcentaje ejecutado: "
@@ -67,7 +67,6 @@ public class FuncionesPresupuestoDAO {
                     return rs.getBigDecimal("p_balance");
                 }
             }
-
         } catch (Exception e) {
             System.out.println(
                     "Error al obtener el balance de la subcategoria: "
@@ -104,7 +103,6 @@ public class FuncionesPresupuestoDAO {
                     );
                 }
             }
-
         } catch (Exception e) {
             System.out.println(
                     "Error al obtener el total de la categoria: "
@@ -115,28 +113,26 @@ public class FuncionesPresupuestoDAO {
         return null;
     }
 
-    public Integer validarVigenciaPresupuesto(
-        int idPresupuesto,
-        short anio,
-        short mes) {
+    public Boolean validarVigenciaPresupuesto(
+        Date fecha,
+        int idPresupuesto) {
 
     String sql =
-            "{ call fn_validar_vigencia_presupuesto(?, ?, ?) }";
+            "{ call fn_validar_vigencia_presupuesto("
+                    + "?, ?) }";
 
     try (
             Connection conn = Database.obtenerConexion();
             CallableStatement cs = conn.prepareCall(sql)
     ) {
-        cs.setInt(1, idPresupuesto);
-        cs.setShort(2, anio);
-        cs.setShort(3, mes);
+        cs.setDate(1, fecha);
+        cs.setInt(2, idPresupuesto);
 
         try (ResultSet rs = cs.executeQuery()) {
             if (rs.next()) {
-                return rs.getInt("p_vigente");
+                return rs.getBoolean("p_vigente");
             }
         }
-
     } catch (Exception e) {
         System.out.println(
                 "Error al validar la vigencia del presupuesto: "
@@ -145,6 +141,5 @@ public class FuncionesPresupuestoDAO {
     }
 
     return null;
-}
-
+    }
 }

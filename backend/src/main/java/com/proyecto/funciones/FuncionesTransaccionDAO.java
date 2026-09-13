@@ -14,7 +14,8 @@ public class FuncionesTransaccionDAO {
             short mes) {
 
         String sql =
-                "{ call fn_calcular_monto_ejecutado(?, ?, ?) }";
+                "{ call fn_calcular_monto_ejecutado("
+                        + "?, ?, ?) }";
 
         try (
                 Connection conn = Database.obtenerConexion();
@@ -31,7 +32,6 @@ public class FuncionesTransaccionDAO {
                     );
                 }
             }
-
         } catch (Exception e) {
             System.out.println(
                     "Error al calcular el monto ejecutado: "
@@ -66,11 +66,74 @@ public class FuncionesTransaccionDAO {
                     );
                 }
             }
-
         } catch (Exception e) {
             System.out.println(
                     "Error al calcular el total ejecutado "
                             + "de la categoria: "
+                            + e.getMessage()
+            );
+        }
+
+        return null;
+    }
+
+    public BigDecimal calcularProyeccionGastoMensual(
+            int idSubcategoria,
+            short anio,
+            short mes) {
+
+        String sql =
+                "{ call fn_calcular_proyeccion_gasto_mensual("
+                        + "?, ?, ?) }";
+
+        try (
+                Connection conn = Database.obtenerConexion();
+                CallableStatement cs = conn.prepareCall(sql)
+        ) {
+            cs.setInt(1, idSubcategoria);
+            cs.setShort(2, anio);
+            cs.setShort(3, mes);
+
+            try (ResultSet rs = cs.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getBigDecimal("p_proyeccion");
+                }
+            }
+        } catch (Exception e) {
+            System.out.println(
+                    "Error al calcular la proyeccion de gasto mensual: "
+                            + e.getMessage()
+            );
+        }
+
+        return null;
+    }
+
+    public BigDecimal obtenerPromedioGastoSubcategoria(
+            int idUsuario,
+            int idSubcategoria,
+            int cantidadMeses) {
+
+        String sql =
+                "{ call fn_obtener_promedio_gasto_subcategoria("
+                        + "?, ?, ?) }";
+
+        try (
+                Connection conn = Database.obtenerConexion();
+                CallableStatement cs = conn.prepareCall(sql)
+        ) {
+            cs.setInt(1, idUsuario);
+            cs.setInt(2, idSubcategoria);
+            cs.setInt(3, cantidadMeses);
+
+            try (ResultSet rs = cs.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getBigDecimal("p_promedio");
+                }
+            }
+        } catch (Exception e) {
+            System.out.println(
+                    "Error al obtener el promedio de gasto: "
                             + e.getMessage()
             );
         }

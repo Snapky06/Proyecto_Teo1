@@ -114,4 +114,37 @@ public class FuncionesPresupuestoDAO {
 
         return null;
     }
+
+    public Integer validarVigenciaPresupuesto(
+        int idPresupuesto,
+        short anio,
+        short mes) {
+
+    String sql =
+            "{ call fn_validar_vigencia_presupuesto(?, ?, ?) }";
+
+    try (
+            Connection conn = Database.obtenerConexion();
+            CallableStatement cs = conn.prepareCall(sql)
+    ) {
+        cs.setInt(1, idPresupuesto);
+        cs.setShort(2, anio);
+        cs.setShort(3, mes);
+
+        try (ResultSet rs = cs.executeQuery()) {
+            if (rs.next()) {
+                return rs.getInt("p_vigente");
+            }
+        }
+
+    } catch (Exception e) {
+        System.out.println(
+                "Error al validar la vigencia del presupuesto: "
+                        + e.getMessage()
+        );
+    }
+
+    return null;
+}
+
 }

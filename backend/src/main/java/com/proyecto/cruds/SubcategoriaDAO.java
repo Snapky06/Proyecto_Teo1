@@ -1,4 +1,4 @@
-package com.proyecto.subcategoria;
+package com.proyecto.cruds;
 
 import com.proyecto.config.Database;
 import java.sql.CallableStatement;

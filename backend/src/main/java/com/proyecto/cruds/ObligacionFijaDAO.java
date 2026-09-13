@@ -1,4 +1,4 @@
-package com.proyecto.obligacion;
+package com.proyecto.cruds;
 
 import com.proyecto.config.Database;
 import java.math.BigDecimal;

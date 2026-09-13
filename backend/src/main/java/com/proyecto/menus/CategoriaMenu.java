@@ -1,7 +1,8 @@
 package com.proyecto.menus;
 
-import com.proyecto.categoria.CategoriaDAO;
 import java.util.Scanner;
+
+import com.proyecto.cruds.CategoriaDAO;
 
 public class CategoriaMenu {
 

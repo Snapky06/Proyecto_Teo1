@@ -4,6 +4,139 @@ import java.math.BigDecimal;
 import java.util.Scanner;
 
 public class MenuHelper {
+    
+public static java.sql.Date leerFecha(
+        Scanner scanner,
+        String mensaje) {
+
+    while (true) {
+        System.out.print(mensaje);
+        String entrada = scanner.nextLine();
+
+        try {
+            return java.sql.Date.valueOf(entrada);
+        } catch (IllegalArgumentException e) {
+            System.out.println(
+                    "Use el formato YYYY-MM-DD."
+            );
+        }
+    }
+}
+
+public static java.sql.Date leerFechaOpcional(
+        Scanner scanner,
+        String mensaje) {
+
+    while (true) {
+        System.out.print(mensaje);
+        String entrada = scanner.nextLine().trim();
+
+        if (entrada.isEmpty()) {
+            return null;
+        }
+
+        try {
+            return java.sql.Date.valueOf(entrada);
+        } catch (IllegalArgumentException e) {
+            System.out.println(
+                    "Use el formato YYYY-MM-DD o deje vacio."
+            );
+        }
+    }
+}
+
+public static short leerDiaVencimiento(
+        Scanner scanner) {
+
+    while (true) {
+        short dia = leerShort(
+                scanner,
+                "Dia de vencimiento: "
+        );
+
+        if (dia >= 1 && dia <= 31) {
+            return dia;
+        }
+
+        System.out.println(
+                "El dia debe estar entre 1 y 31."
+        );
+    }
+}
+
+public static boolean leerBooleano(
+        Scanner scanner,
+        String mensaje) {
+
+    while (true) {
+        System.out.print(mensaje);
+        String entrada = scanner.nextLine()
+                .trim()
+                .toUpperCase();
+
+        if (entrada.equals("SI")) {
+            return true;
+        }
+
+        if (entrada.equals("NO")) {
+            return false;
+        }
+
+        System.out.println(
+                "Debe escribir SI o NO."
+        );
+    }
+}
+
+public static String leerTipoTransaccion(
+        Scanner scanner) {
+
+    while (true) {
+        System.out.print(
+                "Tipo INGRESO, GASTO o AHORRO: "
+        );
+
+        String tipo = scanner.nextLine()
+                .trim()
+                .toUpperCase();
+
+        if (tipo.equals("INGRESO")
+                || tipo.equals("GASTO")
+                || tipo.equals("AHORRO")) {
+            return tipo;
+        }
+
+        System.out.println(
+                "Debe escribir INGRESO, GASTO o AHORRO."
+        );
+    }
+}
+
+public static String leerMetodoPago(
+        Scanner scanner) {
+
+    while (true) {
+        System.out.print(
+                "Metodo EFECTIVO, TARJETA_DEBITO, "
+                        + "TARJETA_CREDITO o TRANSFERENCIA: "
+        );
+
+        String metodo = scanner.nextLine()
+                .trim()
+                .toUpperCase();
+
+        if (metodo.equals("EFECTIVO")
+                || metodo.equals("TARJETA_DEBITO")
+                || metodo.equals("TARJETA_CREDITO")
+                || metodo.equals("TRANSFERENCIA")) {
+            return metodo;
+        }
+
+        System.out.println(
+                "Metodo de pago no valido."
+        );
+    }
+}
 
     public static int leerEntero(
             Scanner scanner,

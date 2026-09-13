@@ -1,9 +1,10 @@
 package com.proyecto.menus;
 
-import com.proyecto.obligacion.ObligacionFijaDAO;
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.util.Scanner;
+
+import com.proyecto.cruds.ObligacionFijaDAO;
 
 public class ObligacionFijaMenu {
 

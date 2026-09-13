@@ -29,9 +29,7 @@ public class FuncionesPresupuestoDAO {
 
             try (ResultSet rs = cs.executeQuery()) {
                 if (rs.next()) {
-                    return rs.getBigDecimal(
-                            "p_porcentaje"
-                    );
+                    return rs.getBigDecimal("p_porcentaje");
                 }
             }
 
@@ -66,16 +64,13 @@ public class FuncionesPresupuestoDAO {
 
             try (ResultSet rs = cs.executeQuery()) {
                 if (rs.next()) {
-                    return rs.getBigDecimal(
-                            "p_balance"
-                    );
+                    return rs.getBigDecimal("p_balance");
                 }
             }
 
         } catch (Exception e) {
             System.out.println(
-                    "Error al obtener el balance de la "
-                            + "subcategoria: "
+                    "Error al obtener el balance de la subcategoria: "
                             + e.getMessage()
             );
         }
@@ -112,8 +107,7 @@ public class FuncionesPresupuestoDAO {
 
         } catch (Exception e) {
             System.out.println(
-                    "Error al obtener el total presupuestado "
-                            + "de la categoria: "
+                    "Error al obtener el total de la categoria: "
                             + e.getMessage()
             );
         }

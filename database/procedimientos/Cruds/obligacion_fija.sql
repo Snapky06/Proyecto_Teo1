@@ -158,6 +158,9 @@ CREATE PROCEDURE sp_eliminar_obligacion_fija (
 )
 AS
 BEGIN
-    DELETE FROM "obligacion_fija"
+    UPDATE "obligacion_fija"
+    SET
+        "vigente" = FALSE,
+        "modificado_en" = CURRENT_TIMESTAMP
     WHERE "id_obligacion" = :p_id_obligacion;
 END

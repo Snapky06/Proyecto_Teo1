@@ -9,9 +9,7 @@ import com.proyecto.menus.cruds_menu.UsuarioMenu;
 import com.proyecto.menus.reportes_menu.ReportesMenu;
 import java.util.Scanner;
 
-public class Menu {
-
-    private final Scanner scanner;
+public class Menu extends MenuBase {
 
     private final UsuarioMenu usuarioMenu;
     private final CategoriaMenu categoriaMenu;
@@ -22,7 +20,7 @@ public class Menu {
     private final ReportesMenu reportesMenu;
 
     public Menu() {
-        scanner = new Scanner(System.in);
+        super(new Scanner(System.in));
 
         usuarioMenu = new UsuarioMenu(scanner);
         categoriaMenu = new CategoriaMenu(scanner);
@@ -33,67 +31,15 @@ public class Menu {
         reportesMenu = new ReportesMenu(scanner);
     }
 
+    @Override
     public void iniciar() {
-        boolean salir = false;
-
-        while (!salir) {
-            mostrarMenuPrincipal();
-
-            int opcion = MenuHelper.leerEntero(
-                    scanner,
-                    "Elige una opcion: "
-            );
-
-            switch (opcion) {
-                case 1:
-                    usuarioMenu.iniciar();
-                    break;
-
-                case 2:
-                    categoriaMenu.iniciar();
-                    break;
-
-                case 3:
-                    subcategoriaMenu.iniciar();
-                    break;
-
-                case 4:
-                    presupuestoMenu.iniciar();
-                    break;
-
-                case 5:
-                    obligacionFijaMenu.iniciar();
-                    break;
-
-                case 6:
-                    transaccionMenu.iniciar();
-                    break;
-
-                case 7:
-                    reportesMenu.iniciar();
-                    break;
-
-                case 0:
-                    salir = true;
-                    System.out.println(
-                            "Saliendo del sistema. Hasta pronto!"
-                    );
-                    break;
-
-                default:
-                    System.out.println(
-                            "Opcion no valida."
-                    );
-            }
-        }
-
+        super.iniciar();
         scanner.close();
     }
 
-    private void mostrarMenuPrincipal() {
-        System.out.println(
-                "\n=== SISTEMA DE PRESUPUESTO PERSONAL ==="
-        );
+    @Override
+    protected void mostrarMenu() {
+        System.out.println("\n=== SISTEMA DE PRESUPUESTO PERSONAL ===");
         System.out.println("1. Gestionar Usuarios");
         System.out.println("2. Gestionar Categorias");
         System.out.println("3. Gestionar Subcategorias");
@@ -102,5 +48,38 @@ public class Menu {
         System.out.println("6. Gestionar Transacciones");
         System.out.println("7. Reportes");
         System.out.println("0. Salir del programa");
+    }
+
+    @Override
+    protected boolean ejecutarOpcion(int opcion) {
+        switch (opcion) {
+            case 1:
+                usuarioMenu.iniciar();
+                break;
+            case 2:
+                categoriaMenu.iniciar();
+                break;
+            case 3:
+                subcategoriaMenu.iniciar();
+                break;
+            case 4:
+                presupuestoMenu.iniciar();
+                break;
+            case 5:
+                obligacionFijaMenu.iniciar();
+                break;
+            case 6:
+                transaccionMenu.iniciar();
+                break;
+            case 7:
+                reportesMenu.iniciar();
+                break;
+            case 0:
+                System.out.println("Saliendo del sistema");
+                return true;
+            default:
+                System.out.println("Opcion no valida.");
+        }
+        return false;
     }
 }

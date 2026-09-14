@@ -1,143 +1,27 @@
 package com.proyecto.funciones;
 
-import com.proyecto.config.Database;
+import com.proyecto.BaseDAO;
 import java.math.BigDecimal;
-import java.sql.CallableStatement;
-import java.sql.Connection;
-import java.sql.ResultSet;
 
-public class FuncionesTransaccionDAO {
+public class FuncionesTransaccionDAO extends BaseDAO {
 
-    public BigDecimal calcularMontoEjecutado(
-            int idSubcategoria,
-            short anio,
-            short mes) {
-
-        String sql =
-                "{ call fn_calcular_monto_ejecutado("
-                        + "?, ?, ?) }";
-
-        try (
-                Connection conn = Database.obtenerConexion();
-                CallableStatement cs = conn.prepareCall(sql)
-        ) {
-            cs.setInt(1, idSubcategoria);
-            cs.setShort(2, anio);
-            cs.setShort(3, mes);
-
-            try (ResultSet rs = cs.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getBigDecimal(
-                            "p_monto_ejecutado"
-                    );
-                }
-            }
-        } catch (Exception e) {
-            System.out.println(
-                    "Error al calcular el monto ejecutado: "
-                            + e.getMessage()
-            );
-        }
-
-        return null;
+    public BigDecimal calcularMontoEjecutado(int idSubcategoria, short anio, short mes) {
+        String sql = "{ call fn_calcular_monto_ejecutado(?, ?, ?) }";
+        return ejecutarFuncionDecimal(sql, "Error al calcular el monto ejecutado", idSubcategoria, anio, mes);
     }
 
-    public BigDecimal obtenerTotalEjecutadoCategoriaMes(
-            int idCategoria,
-            short anio,
-            short mes) {
-
-        String sql =
-                "{ call fn_obtener_total_ejecutado_categoria_mes("
-                        + "?, ?, ?) }";
-
-        try (
-                Connection conn = Database.obtenerConexion();
-                CallableStatement cs = conn.prepareCall(sql)
-        ) {
-            cs.setInt(1, idCategoria);
-            cs.setShort(2, anio);
-            cs.setShort(3, mes);
-
-            try (ResultSet rs = cs.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getBigDecimal(
-                            "p_total_ejecutado"
-                    );
-                }
-            }
-        } catch (Exception e) {
-            System.out.println(
-                    "Error al calcular el total ejecutado "
-                            + "de la categoria: "
-                            + e.getMessage()
-            );
-        }
-
-        return null;
+    public BigDecimal obtenerTotalEjecutadoCategoriaMes(int idCategoria, short anio, short mes) {
+        String sql = "{ call fn_obtener_total_ejecutado_categoria_mes(?, ?, ?) }";
+        return ejecutarFuncionDecimal(sql, "Error al calcular el total ejecutado", idCategoria, anio, mes);
     }
 
-    public BigDecimal calcularProyeccionGastoMensual(
-            int idSubcategoria,
-            short anio,
-            short mes) {
-
-        String sql =
-                "{ call fn_calcular_proyeccion_gasto_mensual("
-                        + "?, ?, ?) }";
-
-        try (
-                Connection conn = Database.obtenerConexion();
-                CallableStatement cs = conn.prepareCall(sql)
-        ) {
-            cs.setInt(1, idSubcategoria);
-            cs.setShort(2, anio);
-            cs.setShort(3, mes);
-
-            try (ResultSet rs = cs.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getBigDecimal("p_proyeccion");
-                }
-            }
-        } catch (Exception e) {
-            System.out.println(
-                    "Error al calcular la proyeccion de gasto mensual: "
-                            + e.getMessage()
-            );
-        }
-
-        return null;
+    public BigDecimal calcularProyeccionGastoMensual(int idSubcategoria, short anio, short mes) {
+        String sql = "{ call fn_calcular_proyeccion_gasto_mensual(?, ?, ?) }";
+        return ejecutarFuncionDecimal(sql, "Error al calcular la proyeccion de gasto", idSubcategoria, anio, mes);
     }
 
-    public BigDecimal obtenerPromedioGastoSubcategoria(
-            int idUsuario,
-            int idSubcategoria,
-            int cantidadMeses) {
-
-        String sql =
-                "{ call fn_obtener_promedio_gasto_subcategoria("
-                        + "?, ?, ?) }";
-
-        try (
-                Connection conn = Database.obtenerConexion();
-                CallableStatement cs = conn.prepareCall(sql)
-        ) {
-            cs.setInt(1, idUsuario);
-            cs.setInt(2, idSubcategoria);
-            cs.setInt(3, cantidadMeses);
-
-            try (ResultSet rs = cs.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getBigDecimal("p_promedio");
-                }
-            }
-        } catch (Exception e) {
-            System.out.println(
-                    "Error al obtener el promedio de gasto: "
-                            + e.getMessage()
-            );
-        }
-
-        return null;
+    public BigDecimal obtenerPromedioGastoSubcategoria(int idUsuario, int idSubcategoria, int cantidadMeses) {
+        String sql = "{ call fn_obtener_promedio_gasto_subcategoria(?, ?, ?) }";
+        return ejecutarFuncionDecimal(sql, "Error al obtener el promedio de gasto", idUsuario, idSubcategoria, cantidadMeses);
     }
 }

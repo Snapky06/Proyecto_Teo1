@@ -4,7 +4,9 @@ import java.math.BigDecimal;
 import java.util.Scanner;
 
 public class MenuHelper {
-    
+
+public static final String USUARIO_SISTEMA = "ADMIN";
+
 public static java.sql.Date leerFecha(
         Scanner scanner,
         String mensaje) {
@@ -299,4 +301,26 @@ public static String leerMetodoPago(
 
         return respuesta.equalsIgnoreCase("SI");
     }
+
+    public static String leerTexto(Scanner scanner, String mensaje) {
+    while (true) {
+        System.out.print(mensaje);
+        String texto = scanner.nextLine().trim();
+        if (!texto.isEmpty()) {
+            return texto;
+        }
+        System.out.println("Este campo no puede quedar vacio.");
+    }
 }
+
+public static String leerTextoOpcional(Scanner scanner, String mensaje) {
+    System.out.print(mensaje);
+    String texto = scanner.nextLine().trim();
+    if (texto.isEmpty()) {
+        return null;
+    }
+    return texto;
+}
+
+}
+

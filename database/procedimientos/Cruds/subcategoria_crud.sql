@@ -118,3 +118,23 @@ BEGIN
     DELETE FROM "subcategoria"
     WHERE "id_subcategoria" = :p_id_subcategoria;
 END
+
+CREATE PROCEDURE sp_obtener_tipo_subcategoria (
+    p_id_subcategoria INTEGER
+)
+RETURNS (
+    p_tipo VARCHAR(10)
+)
+AS
+BEGIN
+    SELECT
+        c."tipo"
+    FROM "subcategoria" s
+    INNER JOIN "categoria" c
+        ON c."id_categoria" = s."id_categoria"
+    WHERE s."id_subcategoria" = :p_id_subcategoria
+    INTO :p_tipo;
+
+    IF (p_tipo IS NOT NULL) THEN
+        SUSPEND;
+END

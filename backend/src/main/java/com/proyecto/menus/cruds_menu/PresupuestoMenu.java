@@ -1,36 +1,31 @@
 package com.proyecto.menus.cruds_menu;
 
-import java.math.BigDecimal;
-import java.util.Scanner;
-
 import com.proyecto.cruds.PresupuestoDAO;
 import com.proyecto.cruds.PresupuestoDetalleDAO;
+import com.proyecto.funciones.ProcedimientosNegocioDAO;
 import com.proyecto.menus.MenuHelper;
+import java.math.BigDecimal;
+import java.util.Scanner;
 
 public class PresupuestoMenu {
 
     private final Scanner scanner;
     private final PresupuestoDAO presupuestoDAO;
     private final PresupuestoDetalleDAO detalleDAO;
+    private final ProcedimientosNegocioDAO negocioDAO;
 
     public PresupuestoMenu(Scanner scanner) {
         this.scanner = scanner;
         presupuestoDAO = new PresupuestoDAO();
         detalleDAO = new PresupuestoDetalleDAO();
+        negocioDAO = new ProcedimientosNegocioDAO();
     }
 
     public void iniciar() {
         boolean salir = false;
 
         while (!salir) {
-            System.out.println("\n--- MENU DE PRESUPUESTOS ---");
-            System.out.println("1. Registrar Presupuesto");
-            System.out.println("2. Listar Presupuestos");
-            System.out.println("3. Consultar Presupuesto");
-            System.out.println("4. Actualizar Presupuesto");
-            System.out.println("5. Eliminar Presupuesto");
-            System.out.println("6. Gestionar Detalles");
-            System.out.println("0. Volver");
+            mostrarMenu();
 
             int opcion = MenuHelper.leerEntero(
                     scanner,
@@ -43,23 +38,11 @@ public class PresupuestoMenu {
                     break;
 
                 case 2:
-                    int idUsuario = MenuHelper.leerEntero(
-                            scanner,
-                            "ID del usuario: "
-                    );
-
-                    presupuestoDAO.listarPresupuestos(idUsuario);
+                    listarPresupuestos();
                     break;
 
                 case 3:
-                    int idPresupuesto = MenuHelper.leerEntero(
-                            scanner,
-                            "ID del presupuesto: "
-                    );
-
-                    presupuestoDAO.consultarPresupuesto(
-                            idPresupuesto
-                    );
+                    consultarPresupuesto();
                     break;
 
                 case 4:
@@ -74,6 +57,14 @@ public class PresupuestoMenu {
                     menuDetalles();
                     break;
 
+                case 7:
+                    cerrarPresupuesto();
+                    break;
+
+                case 8:
+                    crearPresupuestoCompleto();
+                    break;
+
                 case 0:
                     salir = true;
                     break;
@@ -84,14 +75,28 @@ public class PresupuestoMenu {
         }
     }
 
+    private void mostrarMenu() {
+        System.out.println("\n--- MENU DE PRESUPUESTOS ---");
+        System.out.println("1. Registrar presupuesto");
+        System.out.println("2. Listar presupuestos");
+        System.out.println("3. Consultar presupuesto");
+        System.out.println("4. Actualizar presupuesto");
+        System.out.println("5. Eliminar presupuesto");
+        System.out.println("6. Gestionar detalles");
+        System.out.println("7. Cerrar presupuesto");
+        System.out.println("8. Crear presupuesto completo desde JSON");
+        System.out.println("0. Volver");
+    }
+
     private void registrarPresupuesto() {
         int idUsuario = MenuHelper.leerEntero(
                 scanner,
                 "ID del usuario: "
         );
 
-        System.out.print("Nombre del presupuesto: ");
-        String nombre = scanner.nextLine();
+        String nombre = leerTexto(
+                "Nombre del presupuesto: "
+        );
 
         short anioInicio = MenuHelper.leerShort(
                 scanner,
@@ -113,6 +118,18 @@ public class PresupuestoMenu {
                 "Mes de fin: "
         );
 
+        if (!periodoValido(
+                anioInicio,
+                mesInicio,
+                anioFin,
+                mesFin
+        )) {
+            System.out.println(
+                    "El periodo final no puede ser anterior al inicial."
+            );
+            return;
+        }
+
         BigDecimal ingresos = MenuHelper.leerDecimal(
                 scanner,
                 "Total de ingresos planificados: "
@@ -128,10 +145,6 @@ public class PresupuestoMenu {
                 "Total de ahorro planificado: "
         );
 
-        String estado = MenuHelper.leerEstadoPresupuesto(
-                scanner
-        );
-
         presupuestoDAO.insertarPresupuesto(
                 idUsuario,
                 nombre,
@@ -142,8 +155,28 @@ public class PresupuestoMenu {
                 ingresos,
                 gastos,
                 ahorro,
-                estado,
+                "ACTIVO",
                 "ADMIN"
+        );
+    }
+
+    private void listarPresupuestos() {
+        int idUsuario = MenuHelper.leerEntero(
+                scanner,
+                "ID del usuario: "
+        );
+
+        presupuestoDAO.listarPresupuestos(idUsuario);
+    }
+
+    private void consultarPresupuesto() {
+        int idPresupuesto = MenuHelper.leerEntero(
+                scanner,
+                "ID del presupuesto: "
+        );
+
+        presupuestoDAO.consultarPresupuesto(
+                idPresupuesto
         );
     }
 
@@ -153,8 +186,9 @@ public class PresupuestoMenu {
                 "ID del presupuesto: "
         );
 
-        System.out.print("Nuevo nombre: ");
-        String nombre = scanner.nextLine();
+        String nombre = leerTexto(
+                "Nuevo nombre: "
+        );
 
         short anioInicio = MenuHelper.leerShort(
                 scanner,
@@ -175,6 +209,18 @@ public class PresupuestoMenu {
                 scanner,
                 "Nuevo mes de fin: "
         );
+
+        if (!periodoValido(
+                anioInicio,
+                mesInicio,
+                anioFin,
+                mesFin
+        )) {
+            System.out.println(
+                    "El periodo final no puede ser anterior al inicial."
+            );
+            return;
+        }
 
         BigDecimal ingresos = MenuHelper.leerDecimal(
                 scanner,
@@ -225,8 +271,95 @@ public class PresupuestoMenu {
                     idPresupuesto
             );
         } else {
-            System.out.println("Operacion cancelada.");
+            System.out.println(
+                    "Operacion cancelada."
+            );
         }
+    }
+
+    private void cerrarPresupuesto() {
+        int idPresupuesto = MenuHelper.leerEntero(
+                scanner,
+                "ID del presupuesto: "
+        );
+
+        if (MenuHelper.confirmar(scanner)) {
+            negocioDAO.cerrarPresupuesto(
+                    idPresupuesto,
+                    "ADMIN"
+            );
+        } else {
+            System.out.println(
+                    "Operacion cancelada."
+            );
+        }
+    }
+
+    private void crearPresupuestoCompleto() {
+        int idUsuario = MenuHelper.leerEntero(
+                scanner,
+                "ID del usuario: "
+        );
+
+        String nombre = leerTexto(
+                "Nombre del presupuesto: "
+        );
+
+        short anioInicio = MenuHelper.leerShort(
+                scanner,
+                "Anio de inicio: "
+        );
+
+        short mesInicio = MenuHelper.leerMes(
+                scanner,
+                "Mes de inicio: "
+        );
+
+        short anioFin = MenuHelper.leerShort(
+                scanner,
+                "Anio de fin: "
+        );
+
+        short mesFin = MenuHelper.leerMes(
+                scanner,
+                "Mes de fin: "
+        );
+
+        if (!periodoValido(
+                anioInicio,
+                mesInicio,
+                anioFin,
+                mesFin
+        )) {
+            System.out.println(
+                    "El periodo final no puede ser anterior al inicial."
+            );
+            return;
+        }
+
+        System.out.println(
+                "Escriba el JSON completo en una sola linea:"
+        );
+
+        String json = scanner.nextLine().trim();
+
+        if (json.isEmpty()) {
+            System.out.println(
+                    "El JSON no puede quedar vacio."
+            );
+            return;
+        }
+
+        presupuestoDAO.crearPresupuestoCompleto(
+                idUsuario,
+                nombre,
+                anioInicio,
+                mesInicio,
+                anioFin,
+                mesFin,
+                json,
+                "ADMIN"
+        );
     }
 
     private void menuDetalles() {
@@ -236,11 +369,11 @@ public class PresupuestoMenu {
             System.out.println(
                     "\n--- MENU DE DETALLES DE PRESUPUESTO ---"
             );
-            System.out.println("1. Registrar Detalle");
-            System.out.println("2. Listar Detalles");
-            System.out.println("3. Consultar Detalle");
-            System.out.println("4. Actualizar Detalle");
-            System.out.println("5. Eliminar Detalle");
+            System.out.println("1. Registrar detalle");
+            System.out.println("2. Listar detalles");
+            System.out.println("3. Consultar detalle");
+            System.out.println("4. Actualizar detalle");
+            System.out.println("5. Eliminar detalle");
             System.out.println("0. Volver");
 
             int opcion = MenuHelper.leerEntero(
@@ -254,21 +387,11 @@ public class PresupuestoMenu {
                     break;
 
                 case 2:
-                    int idPresupuesto = MenuHelper.leerEntero(
-                            scanner,
-                            "ID del presupuesto: "
-                    );
-
-                    detalleDAO.listarDetalles(idPresupuesto);
+                    listarDetalles();
                     break;
 
                 case 3:
-                    int idDetalle = MenuHelper.leerEntero(
-                            scanner,
-                            "ID del detalle: "
-                    );
-
-                    detalleDAO.consultarDetalle(idDetalle);
+                    consultarDetalle();
                     break;
 
                 case 4:
@@ -276,20 +399,7 @@ public class PresupuestoMenu {
                     break;
 
                 case 5:
-                    int idDetalleEliminar = MenuHelper.leerEntero(
-                            scanner,
-                            "ID del detalle: "
-                    );
-
-                    if (MenuHelper.confirmar(scanner)) {
-                        detalleDAO.eliminarDetalle(
-                                idDetalleEliminar
-                        );
-                    } else {
-                        System.out.println(
-                                "Operacion cancelada."
-                        );
-                    }
+                    eliminarDetalle();
                     break;
 
                 case 0:
@@ -297,7 +407,9 @@ public class PresupuestoMenu {
                     break;
 
                 default:
-                    System.out.println("Opcion no valida.");
+                    System.out.println(
+                            "Opcion no valida."
+                    );
             }
         }
     }
@@ -318,8 +430,9 @@ public class PresupuestoMenu {
                 "Monto mensual: "
         );
 
-        System.out.print("Observaciones: ");
-        String observaciones = scanner.nextLine();
+        String observaciones = leerTextoOpcional(
+                "Observaciones o vacio: "
+        );
 
         detalleDAO.insertarDetalle(
                 idPresupuesto,
@@ -327,6 +440,28 @@ public class PresupuestoMenu {
                 monto,
                 observaciones,
                 "ADMIN"
+        );
+    }
+
+    private void listarDetalles() {
+        int idPresupuesto = MenuHelper.leerEntero(
+                scanner,
+                "ID del presupuesto: "
+        );
+
+        detalleDAO.listarDetalles(
+                idPresupuesto
+        );
+    }
+
+    private void consultarDetalle() {
+        int idDetalle = MenuHelper.leerEntero(
+                scanner,
+                "ID del detalle: "
+        );
+
+        detalleDAO.consultarDetalle(
+                idDetalle
         );
     }
 
@@ -341,8 +476,9 @@ public class PresupuestoMenu {
                 "Nuevo monto mensual: "
         );
 
-        System.out.print("Nuevas observaciones: ");
-        String observaciones = scanner.nextLine();
+        String observaciones = leerTextoOpcional(
+                "Nuevas observaciones o vacio: "
+        );
 
         detalleDAO.actualizarDetalle(
                 idDetalle,
@@ -350,5 +486,65 @@ public class PresupuestoMenu {
                 observaciones,
                 "ADMIN"
         );
+    }
+
+    private void eliminarDetalle() {
+        int idDetalle = MenuHelper.leerEntero(
+                scanner,
+                "ID del detalle: "
+        );
+
+        if (MenuHelper.confirmar(scanner)) {
+            detalleDAO.eliminarDetalle(
+                    idDetalle
+            );
+        } else {
+            System.out.println(
+                    "Operacion cancelada."
+            );
+        }
+    }
+
+    private String leerTexto(String mensaje) {
+        while (true) {
+            System.out.print(mensaje);
+
+            String texto = scanner.nextLine().trim();
+
+            if (!texto.isEmpty()) {
+                return texto;
+            }
+
+            System.out.println(
+                    "Este campo no puede quedar vacio."
+            );
+        }
+    }
+
+    private String leerTextoOpcional(String mensaje) {
+        System.out.print(mensaje);
+
+        String texto = scanner.nextLine().trim();
+
+        if (texto.isEmpty()) {
+            return null;
+        }
+
+        return texto;
+    }
+
+    private boolean periodoValido(
+            short anioInicio,
+            short mesInicio,
+            short anioFin,
+            short mesFin) {
+
+        int periodoInicio =
+                (anioInicio * 12) + mesInicio;
+
+        int periodoFin =
+                (anioFin * 12) + mesFin;
+
+        return periodoFin >= periodoInicio;
     }
 }

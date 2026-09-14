@@ -1,34 +1,57 @@
-CREATE PROCEDURE sp_insertar_presupuesto_detalle (
-    p_id_presupuesto INTEGER,
-    p_id_subcategoria INTEGER,
-    p_monto_mensual NUMERIC(12,2),
-    p_observaciones VARCHAR(255),
+CREATE PROCEDURE sp_insertar_presupuesto (
+    p_id_usuario INTEGER,
+    p_nombre VARCHAR(100),
+    p_anio_inicio SMALLINT,
+    p_mes_inicio SMALLINT,
+    p_anio_fin SMALLINT,
+    p_mes_fin SMALLINT,
+    p_total_ingresos_planificados NUMERIC(12,2),
+    p_total_gastos_planificados NUMERIC(12,2),
+    p_total_ahorro_planificado NUMERIC(12,2),
+    p_estado VARCHAR(10),
     p_creado_por VARCHAR(50)
 )
 RETURNS (
-    p_id_detalle INTEGER
+    p_id_presupuesto INTEGER
 )
 AS
 BEGIN
-    p_id_detalle = GEN_ID(gen_presupuesto_detalle_id, 1);
+    p_id_presupuesto = GEN_ID(gen_presupuesto_id, 1);
 
-    INSERT INTO "presupuesto_detalle" (
-        "id_detalle",
+    INSERT INTO "presupuesto" (
         "id_presupuesto",
-        "id_subcategoria",
-        "monto_mensual",
-        "observaciones",
+        "id_usuario",
+        "nombre",
+        "anio_inicio",
+        "mes_inicio",
+        "anio_fin",
+        "mes_fin",
+        "total_ingresos_planificados",
+        "total_gastos_planificados",
+        "total_ahorro_planificado",
+        "fecha_hora_creacion",
+        "estado",
         "creado_por",
         "creado_en"
-    ) VALUES (
-        :p_id_detalle,
+    )
+    VALUES (
         :p_id_presupuesto,
-        :p_id_subcategoria,
-        :p_monto_mensual,
-        :p_observaciones,
+        :p_id_usuario,
+        :p_nombre,
+        :p_anio_inicio,
+        :p_mes_inicio,
+        :p_anio_fin,
+        :p_mes_fin,
+        :p_total_ingresos_planificados,
+        :p_total_gastos_planificados,
+        :p_total_ahorro_planificado,
+        CURRENT_TIMESTAMP,
+        :p_estado,
         :p_creado_por,
         CURRENT_TIMESTAMP
     );
+
+    SUSPEND;
 END
 
 CREATE PROCEDURE sp_consultar_presupuesto_detalle (

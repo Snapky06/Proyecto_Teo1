@@ -15,3 +15,6 @@ CREATE EXCEPTION ex_transaccion_subcategoria_no_existe
 
 CREATE EXCEPTION ex_transaccion_tipo_invalido
 'El tipo de transaccion no coincide con el tipo de la categoria';
+
+CREATE EXCEPTION ex_presupuesto_no_finalizado
+'El presupuesto aun no ha finalizado';

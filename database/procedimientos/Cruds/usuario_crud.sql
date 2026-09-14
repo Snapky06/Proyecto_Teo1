@@ -23,7 +23,8 @@ BEGIN
         "estado",
         "creado_por",
         "creado_en"
-    ) VALUES (
+    )
+    VALUES (
         :p_id_usuario,
         :p_nombres,
         :p_apellidos,
@@ -34,6 +35,8 @@ BEGIN
         :p_creado_por,
         CURRENT_TIMESTAMP
     );
+
+    SUSPEND;
 END;
 
 CREATE  PROCEDURE sp_consultar_usuario (
@@ -80,6 +83,55 @@ BEGIN
 
     IF (p_nombres IS NOT NULL) THEN
         SUSPEND;
+END
+
+CREATE PROCEDURE sp_listar_usuarios
+RETURNS (
+    p_id_usuario INTEGER,
+    p_nombres VARCHAR(100),
+    p_apellidos VARCHAR(100),
+    p_correo_electronico VARCHAR(150),
+    p_fecha_registro DATE,
+    p_salario_mensual_base NUMERIC(12,2),
+    p_estado BOOLEAN,
+    p_creado_por VARCHAR(50),
+    p_modificado_por VARCHAR(50),
+    p_creado_en TIMESTAMP,
+    p_modificado_en TIMESTAMP
+)
+AS
+BEGIN
+    FOR
+        SELECT
+            "id_usuario",
+            "nombres",
+            "apellidos",
+            "correo_electronico",
+            "fecha_registro",
+            "salario_mensual_base",
+            "estado",
+            "creado_por",
+            "modificado_por",
+            "creado_en",
+            "modificado_en"
+        FROM "usuario"
+        ORDER BY "id_usuario"
+        INTO
+            :p_id_usuario,
+            :p_nombres,
+            :p_apellidos,
+            :p_correo_electronico,
+            :p_fecha_registro,
+            :p_salario_mensual_base,
+            :p_estado,
+            :p_creado_por,
+            :p_modificado_por,
+            :p_creado_en,
+            :p_modificado_en
+    DO
+    BEGIN
+        SUSPEND;
+    END
 END
 
 CREATE PROCEDURE sp_actualizar_usuario (

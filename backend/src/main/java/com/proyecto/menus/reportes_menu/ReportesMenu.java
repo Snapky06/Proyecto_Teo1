@@ -1,25 +1,24 @@
 package com.proyecto.menus.reportes_menu;
 
 import com.proyecto.funciones.FuncionesObligacionDAO;
-import com.proyecto.funciones.FuncionesPresupuestoDAO;
 import com.proyecto.funciones.FuncionesTransaccionDAO;
+import com.proyecto.funciones.ProcedimientosNegocioDAO;
 import com.proyecto.menus.MenuHelper;
 import java.math.BigDecimal;
-import java.sql.Date;
 import java.util.Scanner;
 
 public class ReportesMenu {
 
     private final Scanner scanner;
-    private final FuncionesPresupuestoDAO presupuestoDAO;
     private final FuncionesTransaccionDAO transaccionDAO;
     private final FuncionesObligacionDAO obligacionDAO;
+    private final ProcedimientosNegocioDAO negocioDAO;
 
     public ReportesMenu(Scanner scanner) {
         this.scanner = scanner;
-        presupuestoDAO = new FuncionesPresupuestoDAO();
         transaccionDAO = new FuncionesTransaccionDAO();
         obligacionDAO = new FuncionesObligacionDAO();
+        negocioDAO = new ProcedimientosNegocioDAO();
     }
 
     public void iniciar() {
@@ -35,26 +34,34 @@ public class ReportesMenu {
 
             switch (opcion) {
                 case 1:
-                    resumenMensual();
+                    balanceMensual();
                     break;
 
                 case 2:
-                    distribucionGastosCategoria();
+                    montoEjecutadoMes();
                     break;
 
                 case 3:
-                    cumplimientoPresupuesto();
+                    porcentajeEjecucionMes();
                     break;
 
                 case 4:
-                    estadoObligaciones();
+                    resumenCategoriaMes();
                     break;
 
                 case 5:
-                    proyeccionGasto();
+                    obligacionesMes();
                     break;
 
                 case 6:
+                    diasHastaVencimiento();
+                    break;
+
+                case 7:
+                    proyeccionGasto();
+                    break;
+
+                case 8:
                     promedioGasto();
                     break;
 
@@ -74,33 +81,41 @@ public class ReportesMenu {
         System.out.println(
                 "\n--- MENU DE REPORTES ---"
         );
+        System.out.println("1. Balance mensual");
         System.out.println(
-                "1. Resumen mensual de ingresos y gastos"
+                "2. Monto ejecutado de una subcategoria"
         );
         System.out.println(
-                "2. Distribucion de gastos por categoria"
+                "3. Porcentaje de ejecucion"
         );
         System.out.println(
-                "3. Cumplimiento del presupuesto"
+                "4. Resumen de categoria"
         );
         System.out.println(
-                "4. Estado de obligaciones fijas"
+                "5. Estado de obligaciones del mes"
         );
         System.out.println(
-                "5. Proyeccion de gasto mensual"
+                "6. Dias hasta vencimiento"
         );
         System.out.println(
-                "6. Promedio de gasto por subcategoria"
+                "7. Proyeccion de gasto mensual"
+        );
+        System.out.println(
+                "8. Promedio de gasto por subcategoria"
         );
         System.out.println("0. Volver");
     }
 
-    private void resumenMensual() {
-        int idSubcategoria =
-                ReportesHelper.leerId(
-                        scanner,
-                        "ID de la subcategoria: "
-                );
+    private void balanceMensual() {
+        int idUsuario = ReportesHelper.leerId(
+                scanner,
+                "ID del usuario: "
+        );
+
+        int idPresupuesto = ReportesHelper.leerId(
+                scanner,
+                "ID del presupuesto: "
+        );
 
         short anio = MenuHelper.leerShort(
                 scanner,
@@ -112,25 +127,24 @@ public class ReportesMenu {
                 "Mes: "
         );
 
-        BigDecimal resultado =
-                transaccionDAO.calcularMontoEjecutado(
-                        idSubcategoria,
-                        anio,
-                        mes
-                );
-
-        ReportesHelper.imprimirResultadoMonetario(
-                "Monto ejecutado del mes",
-                resultado
+        negocioDAO.calcularBalanceMensual(
+                idUsuario,
+                idPresupuesto,
+                anio,
+                mes
         );
     }
 
-    private void distribucionGastosCategoria() {
-        int idCategoria =
-                ReportesHelper.leerId(
-                        scanner,
-                        "ID de la categoria: "
-                );
+    private void montoEjecutadoMes() {
+        int idSubcategoria = ReportesHelper.leerId(
+                scanner,
+                "ID de la subcategoria: "
+        );
+
+        int idPresupuesto = ReportesHelper.leerId(
+                scanner,
+                "ID del presupuesto: "
+        );
 
         short anio = MenuHelper.leerShort(
                 scanner,
@@ -142,38 +156,24 @@ public class ReportesMenu {
                 "Mes: "
         );
 
-        BigDecimal resultado =
-                transaccionDAO
-                        .obtenerTotalEjecutadoCategoriaMes(
-                                idCategoria,
-                                anio,
-                                mes
-                        );
-
-        ReportesHelper.imprimirResultadoMonetario(
-                "Total ejecutado de la categoria",
-                resultado
+        negocioDAO.calcularMontoEjecutadoMes(
+                idSubcategoria,
+                idPresupuesto,
+                anio,
+                mes
         );
     }
 
-    private void cumplimientoPresupuesto() {
-        int idCategoria =
-                ReportesHelper.leerId(
-                        scanner,
-                        "ID de la categoria: "
-                );
+    private void porcentajeEjecucionMes() {
+        int idSubcategoria = ReportesHelper.leerId(
+                scanner,
+                "ID de la subcategoria: "
+        );
 
-        int idPresupuesto =
-                ReportesHelper.leerId(
-                        scanner,
-                        "ID del presupuesto: "
-                );
-
-        int idSubcategoria =
-                ReportesHelper.leerId(
-                        scanner,
-                        "ID de la subcategoria: "
-                );
+        int idPresupuesto = ReportesHelper.leerId(
+                scanner,
+                "ID del presupuesto: "
+        );
 
         short anio = MenuHelper.leerShort(
                 scanner,
@@ -185,52 +185,77 @@ public class ReportesMenu {
                 "Mes: "
         );
 
-        BigDecimal presupuestado =
-                presupuestoDAO.obtenerTotalCategoriaMes(
-                        idCategoria,
-                        idPresupuesto,
-                        anio,
-                        mes
-                );
-
-        BigDecimal balance =
-                presupuestoDAO.obtenerBalanceSubcategoria(
-                        idPresupuesto,
-                        idSubcategoria,
-                        anio,
-                        mes
-                );
-
-        BigDecimal porcentaje =
-                presupuestoDAO.calcularPorcentajeEjecutado(
-                        idSubcategoria,
-                        idPresupuesto,
-                        anio,
-                        mes
-                );
-
-        ReportesHelper.imprimirResultadoMonetario(
-                "Total presupuestado de la categoria",
-                presupuestado
-        );
-
-        ReportesHelper.imprimirResultadoMonetario(
-                "Balance de la subcategoria",
-                balance
-        );
-
-        ReportesHelper.imprimirResultadoMonetario(
-                "Porcentaje de ejecucion",
-                porcentaje
+        negocioDAO.calcularPorcentajeEjecucionMes(
+                idSubcategoria,
+                idPresupuesto,
+                anio,
+                mes
         );
     }
 
-    private void estadoObligaciones() {
-        int idObligacion =
-                ReportesHelper.leerId(
-                        scanner,
-                        "ID de la obligacion: "
-                );
+    private void resumenCategoriaMes() {
+        int idCategoria = ReportesHelper.leerId(
+                scanner,
+                "ID de la categoria: "
+        );
+
+        int idPresupuesto = ReportesHelper.leerId(
+                scanner,
+                "ID del presupuesto: "
+        );
+
+        short anio = MenuHelper.leerShort(
+                scanner,
+                "Anio: "
+        );
+
+        short mes = MenuHelper.leerMes(
+                scanner,
+                "Mes: "
+        );
+
+        negocioDAO.obtenerResumenCategoriaMes(
+                idCategoria,
+                idPresupuesto,
+                anio,
+                mes
+        );
+    }
+
+    private void obligacionesMes() {
+        int idUsuario = ReportesHelper.leerId(
+                scanner,
+                "ID del usuario: "
+        );
+
+        int idPresupuesto = ReportesHelper.leerId(
+                scanner,
+                "ID del presupuesto: "
+        );
+
+        short anio = MenuHelper.leerShort(
+                scanner,
+                "Anio: "
+        );
+
+        short mes = MenuHelper.leerMes(
+                scanner,
+                "Mes: "
+        );
+
+        negocioDAO.procesarObligacionesMes(
+                idUsuario,
+                anio,
+                mes,
+                idPresupuesto
+        );
+    }
+
+    private void diasHastaVencimiento() {
+        int idObligacion = ReportesHelper.leerId(
+                scanner,
+                "ID de la obligacion: "
+        );
 
         Integer resultado =
                 obligacionDAO.diasHastaVencimiento(
@@ -244,11 +269,10 @@ public class ReportesMenu {
     }
 
     private void proyeccionGasto() {
-        int idSubcategoria =
-                ReportesHelper.leerId(
-                        scanner,
-                        "ID de la subcategoria: "
-                );
+        int idSubcategoria = ReportesHelper.leerId(
+                scanner,
+                "ID de la subcategoria: "
+        );
 
         short anio = MenuHelper.leerShort(
                 scanner,
@@ -274,17 +298,15 @@ public class ReportesMenu {
     }
 
     private void promedioGasto() {
-        int idUsuario =
-                ReportesHelper.leerId(
-                        scanner,
-                        "ID del usuario: "
-                );
+        int idUsuario = ReportesHelper.leerId(
+                scanner,
+                "ID del usuario: "
+        );
 
-        int idSubcategoria =
-                ReportesHelper.leerId(
-                        scanner,
-                        "ID de la subcategoria: "
-                );
+        int idSubcategoria = ReportesHelper.leerId(
+                scanner,
+                "ID de la subcategoria: "
+        );
 
         int cantidadMeses =
                 ReportesHelper.leerCantidadMeses(
@@ -292,12 +314,11 @@ public class ReportesMenu {
                 );
 
         BigDecimal resultado =
-                transaccionDAO
-                        .obtenerPromedioGastoSubcategoria(
-                                idUsuario,
-                                idSubcategoria,
-                                cantidadMeses
-                        );
+                transaccionDAO.obtenerPromedioGastoSubcategoria(
+                        idUsuario,
+                        idSubcategoria,
+                        cantidadMeses
+                );
 
         ReportesHelper.imprimirResultadoMonetario(
                 "Promedio de gasto",

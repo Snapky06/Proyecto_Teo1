@@ -3,41 +3,51 @@ package com.proyecto.cruds;
 import com.proyecto.config.Database;
 import java.sql.CallableStatement;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.Types;
 
 public class UsuarioDAO {
 
     public void insertarUsuario(
-            String nombres,
-            String apellidos,
-            String correoElectronico,
-            java.sql.Date fechaRegistro,
-            java.math.BigDecimal salarioMensualBase,
-            String creadoPor) {
+        String nombres,
+        String apellidos,
+        String correoElectronico,
+        java.sql.Date fechaRegistro,
+        java.math.BigDecimal salarioMensualBase,
+        String creadoPor) {
 
-        String sql = "{ ? = call sp_insertar_usuario(?, ?, ?, ?, ?, ?) }";
+    String sql =
+            "EXECUTE PROCEDURE sp_insertar_usuario("
+                    + "?, ?, ?, ?, ?, ?)";
 
-        try (
-                Connection conn = Database.obtenerConexion();
-                CallableStatement cs = conn.prepareCall(sql)
-        ) {
-            cs.registerOutParameter(1, Types.INTEGER);
-            cs.setString(2, nombres);
-            cs.setString(3, apellidos);
-            cs.setString(4, correoElectronico);
-            cs.setDate(5, fechaRegistro);
-            cs.setBigDecimal(6, salarioMensualBase);
-            cs.setString(7, creadoPor);
+    try (
+            Connection conn = Database.obtenerConexion();
+            PreparedStatement ps = conn.prepareStatement(sql)
+    ) {
+        ps.setString(1, nombres);
+        ps.setString(2, apellidos);
+        ps.setString(3, correoElectronico);
+        ps.setDate(4, fechaRegistro);
+        ps.setBigDecimal(5, salarioMensualBase);
+        ps.setString(6, creadoPor);
 
-            cs.execute();
-
-            System.out.println("Usuario registrado con ID: " + cs.getInt(1));
-
-        } catch (Exception e) {
-            System.out.println("Error: " + e.getMessage());
+        try (ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                System.out.println(
+                        "Usuario registrado con ID: "
+                                + rs.getInt("P_ID_USUARIO")
+                );
+            } else {
+                System.out.println(
+                        "El usuario fue registrado, pero no se devolvio el ID."
+                );
+            }
         }
+
+    } catch (Exception e) {
+        System.out.println("Error: " + e.getMessage());
     }
+}
 
     public void listarUsuarios() {
         String sql = "{ call sp_listar_usuarios }";

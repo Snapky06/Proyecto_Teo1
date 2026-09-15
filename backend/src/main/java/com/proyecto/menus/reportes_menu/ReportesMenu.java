@@ -1,89 +1,70 @@
 package com.proyecto.menus.reportes_menu;
 
-import com.proyecto.funciones.FuncionesObligacionDAO;
-import com.proyecto.funciones.FuncionesPresupuestoDAO;
-import com.proyecto.funciones.FuncionesTransaccionDAO;
-import com.proyecto.funciones.ProcedimientosNegocioDAO;
+import com.itextpdf.text.BaseColor;
+import com.itextpdf.text.Document;
+import com.itextpdf.text.Font;
+import com.itextpdf.text.FontFactory;
+import com.itextpdf.text.Paragraph;
+import com.itextpdf.text.Phrase;
+import com.itextpdf.text.pdf.PdfPCell;
+import com.itextpdf.text.pdf.PdfPTable;
+import com.itextpdf.text.pdf.PdfWriter;
+import com.proyecto.config.Database;
 import com.proyecto.menus.MenuBase;
 import com.proyecto.menus.MenuHelper;
+import java.io.FileOutputStream;
 import java.math.BigDecimal;
+import java.sql.CallableStatement;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.Scanner;
 
 public class ReportesMenu extends MenuBase {
 
-    private final FuncionesTransaccionDAO transaccionDAO;
-    private final FuncionesObligacionDAO obligacionDAO;
-    private final ProcedimientosNegocioDAO negocioDAO;
-    private final FuncionesPresupuestoDAO presupuestoFuncionesDAO;
+    private final Font fontTitulo = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16, BaseColor.BLACK);
+    private final Font fontSubtitulo = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, BaseColor.BLACK);
+    private final Font fontNormal = FontFactory.getFont(FontFactory.HELVETICA, 11, BaseColor.BLACK);
+    private final Font fontVerde = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11, new BaseColor(34, 139, 34));
+    private final Font fontNaranja = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11, BaseColor.ORANGE);
+    private final Font fontRojo = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11, BaseColor.RED);
 
     public ReportesMenu(Scanner scanner) {
         super(scanner);
-        this.transaccionDAO = new FuncionesTransaccionDAO();
-        this.obligacionDAO = new FuncionesObligacionDAO();
-        this.negocioDAO = new ProcedimientosNegocioDAO();
-        this.presupuestoFuncionesDAO = new FuncionesPresupuestoDAO();
     }
 
     @Override
     protected void mostrarMenu() {
-        System.out.println("\n--- MENU DE REPORTES ---");
-        System.out.println("1. Balance mensual");
-        System.out.println("2. Monto ejecutado de una subcategoria");
-        System.out.println("3. Porcentaje de ejecucion");
-        System.out.println("4. Resumen de categoria");
-        System.out.println("5. Estado de obligaciones del mes");
-        System.out.println("6. Dias hasta vencimiento");
-        System.out.println("7. Proyeccion de gasto mensual");
-        System.out.println("8. Promedio de gasto por subcategoria");
-        System.out.println("9. Porcentaje ejecutado (Funcion directa)");
-        System.out.println("10. Balance de subcategoria (Funcion directa)");
-        System.out.println("11. Total presupuestado de categoria (Funcion directa)");
-        System.out.println("12. Monto ejecutado (Funcion directa)");
-        System.out.println("13. Total ejecutado de categoria (Funcion directa)");
-        System.out.println("0. Volver");
+        System.out.println("\n=== MODULO DE REPORTERIA Y EXPORTACION PDF ===");
+        System.out.println("1. Exportar Reporte 1: Resumen Mensual de Ingresos vs Gastos");
+        System.out.println("2. Exportar Reporte 2: Distribucion de Gastos por Categoria");
+        System.out.println("3. Exportar Reporte 3: Analisis de Cumplimiento de Presupuesto");
+        System.out.println("4. Exportar Reporte 4: Estado de Obligaciones Fijas");
+        System.out.println("5. Exportar Reporte 5: Proyeccion de Gastos a Fin de Mes");
+        System.out.println("6. Exportar Reporte 6: Analisis Historico y Promedio de Gastos");
+        System.out.println("0. Volver al menu principal");
     }
 
     @Override
     protected boolean ejecutarOpcion(int opcion) {
         switch (opcion) {
             case 1:
-                balanceMensual();
+                generarReporteBalanceMensual();
                 break;
             case 2:
-                montoEjecutadoMes();
+                generarReporteDistribucionGastos();
                 break;
             case 3:
-                porcentajeEjecucionMes();
+                generarReporteCumplimiento();
                 break;
             case 4:
-                resumenCategoriaMes();
+                generarReporteObligaciones();
                 break;
             case 5:
-                obligacionesMes();
+                generarReporteProyeccion();
                 break;
             case 6:
-                diasHastaVencimiento();
-                break;
-            case 7:
-                proyeccionGasto();
-                break;
-            case 8:
-                promedioGasto();
-                break;
-            case 9:
-                funcPorcentajeEjecutado();
-                break;
-            case 10:
-                funcBalanceSubcategoria();
-                break;
-            case 11:
-                funcTotalCategoria();
-                break;
-            case 12:
-                funcMontoEjecutado();
-                break;
-            case 13:
-                funcTotalEjecutadoCategoria();
+                generarReportePromedio();
                 break;
             case 0:
                 return true;
@@ -93,108 +74,366 @@ public class ReportesMenu extends MenuBase {
         return false;
     }
 
-    private void balanceMensual() {
-        int idUsuario = ReportesHelper.leerId(scanner, "ID del usuario: ");
-        int idPresupuesto = ReportesHelper.leerId(scanner, "ID del presupuesto: ");
-        short anio = MenuHelper.leerShort(scanner, "Anio: ");
-        short mes = MenuHelper.leerMes(scanner, "Mes: ");
-        negocioDAO.calcularBalanceMensual(idUsuario, idPresupuesto, anio, mes);
+    private String generarBarraAscii(double porcentaje) {
+        int fill = (int) (porcentaje / 10);
+        fill = Math.min(10, Math.max(0, fill));
+        StringBuilder b = new StringBuilder("[");
+        for (int i = 0; i < 10; i++) {
+            b.append(i < fill ? "=" : " ");
+        }
+        b.append("]");
+        return b.toString();
     }
 
-    private void montoEjecutadoMes() {
-        int idSubcategoria = ReportesHelper.leerId(scanner, "ID de la subcategoria: ");
-        int idPresupuesto = ReportesHelper.leerId(scanner, "ID del presupuesto: ");
-        short anio = MenuHelper.leerShort(scanner, "Anio: ");
-        short mes = MenuHelper.leerMes(scanner, "Mes: ");
-        negocioDAO.calcularMontoEjecutadoMes(idSubcategoria, idPresupuesto, anio, mes);
+    private void generarReporteBalanceMensual() {
+        int idUsuario = MenuHelper.leerEntero(scanner, "ID del usuario: ");
+        int idPresupuesto = MenuHelper.leerEntero(scanner, "ID del presupuesto: ");
+        short anio = MenuHelper.leerShort(scanner, "Anio (Ej. 2026): ");
+        short mes = MenuHelper.leerMes(scanner, "Mes (1-12): ");
+
+        String archivo = "Reporte_1_Balance_Mensual.pdf";
+        try (Connection conn = Database.obtenerConexion();
+             CallableStatement cs = conn.prepareCall("{ call sp_calcular_balance_mensual(?, ?, ?, ?) }")) {
+
+            cs.setInt(1, idUsuario);
+            cs.setInt(2, idPresupuesto);
+            cs.setShort(3, anio);
+            cs.setShort(4, mes);
+
+            try (ResultSet rs = cs.executeQuery()) {
+                if (rs.next()) {
+                    Document document = new Document();
+                    PdfWriter.getInstance(document, new FileOutputStream(archivo));
+                    document.open();
+
+                    document.add(new Paragraph("Reporte 1: Resumen Mensual de Ingresos vs Gastos", fontTitulo));
+                    document.add(new Paragraph("Periodo: " + mes + "/" + anio + "\n\n", fontNormal));
+
+                    BigDecimal ingresos = rs.getBigDecimal("total_ingresos");
+                    BigDecimal gastos = rs.getBigDecimal("total_gastos");
+                    BigDecimal ahorros = rs.getBigDecimal("total_ahorros");
+                    BigDecimal balance = rs.getBigDecimal("balance_final");
+
+                    double maximo = Math.max(ingresos.doubleValue(), gastos.doubleValue());
+                    if (maximo == 0) maximo = 1;
+
+                    document.add(new Paragraph("Total Ingresos: L. " + ingresos, fontVerde));
+                    document.add(new Paragraph(generarBarraAscii((ingresos.doubleValue() / maximo) * 100) + "\n\n", fontNormal));
+
+                    document.add(new Paragraph("Total Gastos: L. " + gastos, fontRojo));
+                    document.add(new Paragraph(generarBarraAscii((gastos.doubleValue() / maximo) * 100) + "\n\n", fontNormal));
+
+                    document.add(new Paragraph("Total Ahorros: L. " + ahorros, fontNaranja));
+                    document.add(new Paragraph("\nBalance Final Disponible: L. " + balance, fontSubtitulo));
+
+                    document.close();
+                    System.out.println("Exito: Se ha generado el archivo " + archivo);
+                } else {
+                    System.out.println("No hay datos para generar el reporte.");
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("Error al generar PDF: " + e.getMessage());
+        }
     }
 
-    private void porcentajeEjecucionMes() {
-        int idSubcategoria = ReportesHelper.leerId(scanner, "ID de la subcategoria: ");
-        int idPresupuesto = ReportesHelper.leerId(scanner, "ID del presupuesto: ");
-        short anio = MenuHelper.leerShort(scanner, "Anio: ");
-        short mes = MenuHelper.leerMes(scanner, "Mes: ");
-        negocioDAO.calcularPorcentajeEjecucionMes(idSubcategoria, idPresupuesto, anio, mes);
+    private void generarReporteDistribucionGastos() {
+        int idUsuario = MenuHelper.leerEntero(scanner, "ID del usuario: ");
+        int idPresupuesto = MenuHelper.leerEntero(scanner, "ID del presupuesto: ");
+        short anio = MenuHelper.leerShort(scanner, "Anio (Ej. 2026): ");
+        short mes = MenuHelper.leerMes(scanner, "Mes (1-12): ");
+
+        String archivo = "Reporte_2_Distribucion_Gastos.pdf";
+        try (Connection conn = Database.obtenerConexion()) {
+            Document document = new Document();
+            PdfWriter.getInstance(document, new FileOutputStream(archivo));
+            document.open();
+
+            document.add(new Paragraph("Reporte 2: Distribucion de Gastos por Categoria", fontTitulo));
+            document.add(new Paragraph("Periodo: " + mes + "/" + anio + "\n\n", fontNormal));
+
+            String sqlTotal = "{ call fn_obtener_total_ejecutado_categoria_mes(?, ?, ?) }";
+            String sqlCat = "SELECT id_categoria, nombre FROM categoria WHERE id_usuario = ? AND tipo = 'GASTO'";
+            
+            BigDecimal granTotal = BigDecimal.ZERO;
+
+            try (PreparedStatement ps = conn.prepareStatement(sqlCat)) {
+                ps.setInt(1, idUsuario);
+                try (ResultSet rsCat = ps.executeQuery()) {
+                    while (rsCat.next()) {
+                        try (CallableStatement csTotal = conn.prepareCall(sqlTotal)) {
+                            csTotal.setInt(1, rsCat.getInt("id_categoria"));
+                            csTotal.setShort(2, anio);
+                            csTotal.setShort(3, mes);
+                            try (ResultSet rsTotal = csTotal.executeQuery()) {
+                                if (rsTotal.next() && rsTotal.getBigDecimal(1) != null) {
+                                    granTotal = granTotal.add(rsTotal.getBigDecimal(1));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            document.add(new Paragraph("Gasto Total del Mes: L. " + granTotal + "\n\n", fontSubtitulo));
+
+            if (granTotal.compareTo(BigDecimal.ZERO) > 0) {
+                try (PreparedStatement ps = conn.prepareStatement(sqlCat)) {
+                    ps.setInt(1, idUsuario);
+                    try (ResultSet rsCat = ps.executeQuery()) {
+                        while (rsCat.next()) {
+                            String nombreCat = rsCat.getString("nombre");
+                            BigDecimal totalCat = BigDecimal.ZERO;
+
+                            try (CallableStatement csTotal = conn.prepareCall(sqlTotal)) {
+                                csTotal.setInt(1, rsCat.getInt("id_categoria"));
+                                csTotal.setShort(2, anio);
+                                csTotal.setShort(3, mes);
+                                try (ResultSet rsTotal = csTotal.executeQuery()) {
+                                    if (rsTotal.next() && rsTotal.getBigDecimal(1) != null) {
+                                        totalCat = rsTotal.getBigDecimal(1);
+                                    }
+                                }
+                            }
+
+                            if (totalCat.compareTo(BigDecimal.ZERO) > 0) {
+                                double pct = (totalCat.doubleValue() / granTotal.doubleValue()) * 100;
+                                String linea = String.format("%s: L. %.2f (%.1f%%)", nombreCat, totalCat, pct);
+                                document.add(new Paragraph(linea, fontNormal));
+                                document.add(new Paragraph(generarBarraAscii(pct) + "\n", fontNormal));
+                            }
+                        }
+                    }
+                }
+            }
+
+            document.close();
+            System.out.println("Exito: Se ha generado el archivo " + archivo);
+        } catch (Exception e) {
+            System.out.println("Error al generar PDF: " + e.getMessage());
+        }
     }
 
-    private void resumenCategoriaMes() {
-        int idCategoria = ReportesHelper.leerId(scanner, "ID de la categoria: ");
-        int idPresupuesto = ReportesHelper.leerId(scanner, "ID del presupuesto: ");
-        short anio = MenuHelper.leerShort(scanner, "Anio: ");
-        short mes = MenuHelper.leerMes(scanner, "Mes: ");
-        negocioDAO.obtenerResumenCategoriaMes(idCategoria, idPresupuesto, anio, mes);
+    private void generarReporteCumplimiento() {
+        int idUsuario = MenuHelper.leerEntero(scanner, "ID del usuario: ");
+        int idPresupuesto = MenuHelper.leerEntero(scanner, "ID del presupuesto: ");
+        short anio = MenuHelper.leerShort(scanner, "Anio (Ej. 2026): ");
+        short mes = MenuHelper.leerMes(scanner, "Mes (1-12): ");
+
+        String archivo = "Reporte_3_Cumplimiento_Presupuesto.pdf";
+        try (Connection conn = Database.obtenerConexion()) {
+            Document document = new Document();
+            PdfWriter.getInstance(document, new FileOutputStream(archivo));
+            document.open();
+
+            document.add(new Paragraph("Reporte 3: Analisis de Cumplimiento de Presupuesto", fontTitulo));
+            document.add(new Paragraph("Periodo: " + mes + "/" + anio + "\n\n", fontNormal));
+
+            String sqlCat = "SELECT id_categoria, nombre FROM categoria WHERE id_usuario = ? AND tipo = 'GASTO'";
+            String sqlResumen = "{ call sp_obtener_resumen_categoria_mes(?, ?, ?, ?) }";
+            String sqlSub = "SELECT id_subcategoria, nombre FROM subcategoria WHERE id_categoria = ?";
+            String sqlPctSub = "{ call fn_calcular_porcentaje_ejecutado(?, ?, ?, ?) }";
+            String sqlMontoSub = "{ call fn_calcular_monto_ejecutado(?, ?, ?) }";
+
+            try (PreparedStatement psCat = conn.prepareStatement(sqlCat)) {
+                psCat.setInt(1, idUsuario);
+                try (ResultSet rsCat = psCat.executeQuery()) {
+                    while (rsCat.next()) {
+                        int idCat = rsCat.getInt("id_categoria");
+                        String nombreCat = rsCat.getString("nombre");
+
+                        try (CallableStatement csRes = conn.prepareCall(sqlResumen)) {
+                            csRes.setInt(1, idCat);
+                            csRes.setInt(2, idPresupuesto);
+                            csRes.setShort(3, anio);
+                            csRes.setShort(4, mes);
+                            try (ResultSet rsRes = csRes.executeQuery()) {
+                                if (rsRes.next()) {
+                                    BigDecimal ppto = rsRes.getBigDecimal("monto_presupuestado");
+                                    BigDecimal ejec = rsRes.getBigDecimal("monto_ejecutado");
+                                    BigDecimal pct = rsRes.getBigDecimal("porcentaje_ejecucion");
+
+                                    document.add(new Paragraph("Categoria: " + nombreCat + " (Presupuestado: L." + ppto + " / Ejecutado: L." + ejec + ")", fontSubtitulo));
+
+                                    try (PreparedStatement psSub = conn.prepareStatement(sqlSub)) {
+                                        psSub.setInt(1, idCat);
+                                        try (ResultSet rsSub = psSub.executeQuery()) {
+                                            while (rsSub.next()) {
+                                                int idSub = rsSub.getInt("id_subcategoria");
+                                                String nomSub = rsSub.getString("nombre");
+                                                
+                                                BigDecimal subPct = BigDecimal.ZERO;
+                                                BigDecimal subMonto = BigDecimal.ZERO;
+
+                                                try (CallableStatement csPct = conn.prepareCall(sqlPctSub)) {
+                                                    csPct.setInt(1, idSub);
+                                                    csPct.setInt(2, idPresupuesto);
+                                                    csPct.setShort(3, anio);
+                                                    csPct.setShort(4, mes);
+                                                    ResultSet rsPct = csPct.executeQuery();
+                                                    if (rsPct.next() && rsPct.getBigDecimal(1) != null) subPct = rsPct.getBigDecimal(1);
+                                                }
+
+                                                try (CallableStatement csMon = conn.prepareCall(sqlMontoSub)) {
+                                                    csMon.setInt(1, idSub);
+                                                    csMon.setShort(2, anio);
+                                                    csMon.setShort(3, mes);
+                                                    ResultSet rsMon = csMon.executeQuery();
+                                                    if (rsMon.next() && rsMon.getBigDecimal(1) != null) subMonto = rsMon.getBigDecimal(1);
+                                                }
+
+                                                Font fuenteColor = fontVerde;
+                                                if (subPct.doubleValue() > 100) fuenteColor = fontRojo;
+                                                else if (subPct.doubleValue() >= 80) fuenteColor = fontNaranja;
+
+                                                document.add(new Paragraph("   - " + nomSub + ": Ejecutado L." + subMonto + " (" + subPct + "%)", fuenteColor));
+                                            }
+                                        }
+                                    }
+                                    document.add(new Paragraph("\n"));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            document.close();
+            System.out.println("Exito: Se ha generado el archivo " + archivo);
+        } catch (Exception e) {
+            System.out.println("Error al generar PDF: " + e.getMessage());
+        }
     }
 
-    private void obligacionesMes() {
-        int idUsuario = ReportesHelper.leerId(scanner, "ID del usuario: ");
-        int idPresupuesto = ReportesHelper.leerId(scanner, "ID del presupuesto: ");
-        short anio = MenuHelper.leerShort(scanner, "Anio: ");
-        short mes = MenuHelper.leerMes(scanner, "Mes: ");
-        negocioDAO.procesarObligacionesMes(idUsuario, anio, mes, idPresupuesto);
+    private void generarReporteObligaciones() {
+        int idUsuario = MenuHelper.leerEntero(scanner, "ID del usuario: ");
+        int idPresupuesto = MenuHelper.leerEntero(scanner, "ID del presupuesto: ");
+        short anio = MenuHelper.leerShort(scanner, "Anio (Ej. 2026): ");
+        short mes = MenuHelper.leerMes(scanner, "Mes (1-12): ");
+
+        String archivo = "Reporte_4_Estado_Obligaciones.pdf";
+        try (Connection conn = Database.obtenerConexion();
+             CallableStatement cs = conn.prepareCall("{ call sp_procesar_obligaciones_mes(?, ?, ?, ?) }")) {
+
+            cs.setInt(1, idUsuario);
+            cs.setShort(2, anio);
+            cs.setShort(3, mes);
+            cs.setInt(4, idPresupuesto);
+
+            Document document = new Document();
+            PdfWriter.getInstance(document, new FileOutputStream(archivo));
+            document.open();
+
+            document.add(new Paragraph("Reporte 4: Estado de Obligaciones Fijas", fontTitulo));
+            document.add(new Paragraph("Periodo: " + mes + "/" + anio + "\n\n", fontNormal));
+
+            PdfPTable tabla = new PdfPTable(5);
+            tabla.setWidthPercentage(100);
+            tabla.addCell(new PdfPCell(new Phrase("Obligacion", fontSubtitulo)));
+            tabla.addCell(new PdfPCell(new Phrase("Monto", fontSubtitulo)));
+            tabla.addCell(new PdfPCell(new Phrase("Vencimiento", fontSubtitulo)));
+            tabla.addCell(new PdfPCell(new Phrase("Dias Restantes", fontSubtitulo)));
+            tabla.addCell(new PdfPCell(new Phrase("Estado", fontSubtitulo)));
+
+            try (ResultSet rs = cs.executeQuery()) {
+                while (rs.next()) {
+                    String estado = rs.getString("p_estado_pago");
+                    Font fuenteColor = fontNormal;
+                    if (estado.equals("PAGADA")) fuenteColor = fontVerde;
+                    else if (estado.equals("VENCIDA")) fuenteColor = fontRojo;
+                    else if (estado.equals("POR VENCER")) fuenteColor = fontNaranja;
+
+                    tabla.addCell(new Phrase(rs.getString("p_nombre"), fontNormal));
+                    tabla.addCell(new Phrase(rs.getBigDecimal("p_monto_fijo_mensual").toString(), fontNormal));
+                    tabla.addCell(new Phrase(rs.getDate("p_fecha_vencimiento").toString(), fontNormal));
+                    tabla.addCell(new Phrase(String.valueOf(rs.getInt("p_dias_hasta_vencimiento")), fontNormal));
+                    tabla.addCell(new Phrase(estado, fuenteColor));
+                }
+            }
+
+            document.add(tabla);
+            document.close();
+            System.out.println("Exito: Se ha generado el archivo " + archivo);
+        } catch (Exception e) {
+            System.out.println("Error al generar PDF: " + e.getMessage());
+        }
     }
 
-    private void diasHastaVencimiento() {
-        int idObligacion = ReportesHelper.leerId(scanner, "ID de la obligacion: ");
-        Integer resultado = obligacionDAO.diasHastaVencimiento(idObligacion);
-        ReportesHelper.imprimirResultado("Dias hasta vencimiento", resultado);
+    private void generarReporteProyeccion() {
+        int idSubcategoria = MenuHelper.leerEntero(scanner, "ID de la subcategoria: ");
+        short anio = MenuHelper.leerShort(scanner, "Anio (Ej. 2026): ");
+        short mes = MenuHelper.leerMes(scanner, "Mes (1-12): ");
+
+        String archivo = "Reporte_5_Proyeccion_Gasto.pdf";
+        try (Connection conn = Database.obtenerConexion()) {
+            Document document = new Document();
+            PdfWriter.getInstance(document, new FileOutputStream(archivo));
+            document.open();
+
+            document.add(new Paragraph("Reporte 5: Proyeccion de Gasto a Fin de Mes", fontTitulo));
+            document.add(new Paragraph("Subcategoria ID: " + idSubcategoria + " | Periodo: " + mes + "/" + anio + "\n\n", fontNormal));
+
+            String sqlPadre = "{ call fn_obtener_categoria_por_subcategoria(?) }";
+            try (CallableStatement csP = conn.prepareCall(sqlPadre)) {
+                csP.setInt(1, idSubcategoria);
+                try (ResultSet rsP = csP.executeQuery()) {
+                    if (rsP.next()) {
+                        document.add(new Paragraph("ID Categoria Padre Mapeada: " + rsP.getInt(1), fontNormal));
+                    }
+                }
+            }
+
+            String sqlProy = "{ call fn_calcular_proyeccion_gasto_mensual(?, ?, ?) }";
+            try (CallableStatement cs = conn.prepareCall(sqlProy)) {
+                cs.setInt(1, idSubcategoria);
+                cs.setShort(2, anio);
+                cs.setShort(3, mes);
+                try (ResultSet rs = cs.executeQuery()) {
+                    if (rs.next()) {
+                        document.add(new Paragraph("\nSegun su ritmo de consumo diario actual, al finalizar el mes el gasto estimado sera de:", fontNormal));
+                        document.add(new Paragraph("L. " + rs.getBigDecimal(1), fontRojo));
+                    }
+                }
+            }
+
+            document.close();
+            System.out.println("Exito: Se ha generado el archivo " + archivo);
+        } catch (Exception e) {
+            System.out.println("Error al generar PDF: " + e.getMessage());
+        }
     }
 
-    private void proyeccionGasto() {
-        int idSubcategoria = ReportesHelper.leerId(scanner, "ID de la subcategoria: ");
-        short anio = MenuHelper.leerShort(scanner, "Anio: ");
-        short mes = MenuHelper.leerMes(scanner, "Mes: ");
-        BigDecimal resultado = transaccionDAO.calcularProyeccionGastoMensual(idSubcategoria, anio, mes);
-        ReportesHelper.imprimirResultadoMonetario("Proyeccion de gasto mensual", resultado);
-    }
+    private void generarReportePromedio() {
+        int idUsuario = MenuHelper.leerEntero(scanner, "ID del usuario: ");
+        int idSubcategoria = MenuHelper.leerEntero(scanner, "ID de la subcategoria: ");
+        int meses = ReportesHelper.leerCantidadMeses(scanner);
 
-    private void promedioGasto() {
-        int idUsuario = ReportesHelper.leerId(scanner, "ID del usuario: ");
-        int idSubcategoria = ReportesHelper.leerId(scanner, "ID de la subcategoria: ");
-        int cantidadMeses = ReportesHelper.leerCantidadMeses(scanner);
-        BigDecimal resultado = transaccionDAO.obtenerPromedioGastoSubcategoria(idUsuario, idSubcategoria, cantidadMeses);
-        ReportesHelper.imprimirResultadoMonetario("Promedio de gasto", resultado);
-    }
+        String archivo = "Reporte_6_Promedio_Historico.pdf";
+        try (Connection conn = Database.obtenerConexion();
+             CallableStatement cs = conn.prepareCall("{ call fn_obtener_promedio_gasto_subcategoria(?, ?, ?) }")) {
 
-    private void funcPorcentajeEjecutado() {
-        int idSubcategoria = ReportesHelper.leerId(scanner, "ID de la subcategoria: ");
-        int idPresupuesto = ReportesHelper.leerId(scanner, "ID del presupuesto: ");
-        short anio = MenuHelper.leerShort(scanner, "Anio: ");
-        short mes = MenuHelper.leerMes(scanner, "Mes: ");
-        BigDecimal resultado = presupuestoFuncionesDAO.calcularPorcentajeEjecutado(idSubcategoria, idPresupuesto, anio, mes);
-        ReportesHelper.imprimirResultadoMonetario("Porcentaje ejecutado (%)", resultado);
-    }
+            cs.setInt(1, idUsuario);
+            cs.setInt(2, idSubcategoria);
+            cs.setInt(3, meses);
 
-    private void funcBalanceSubcategoria() {
-        int idPresupuesto = ReportesHelper.leerId(scanner, "ID del presupuesto: ");
-        int idSubcategoria = ReportesHelper.leerId(scanner, "ID de la subcategoria: ");
-        short anio = MenuHelper.leerShort(scanner, "Anio: ");
-        short mes = MenuHelper.leerMes(scanner, "Mes: ");
-        BigDecimal resultado = presupuestoFuncionesDAO.obtenerBalanceSubcategoria(idPresupuesto, idSubcategoria, anio, mes);
-        ReportesHelper.imprimirResultadoMonetario("Balance de la subcategoria", resultado);
-    }
+            Document document = new Document();
+            PdfWriter.getInstance(document, new FileOutputStream(archivo));
+            document.open();
 
-    private void funcTotalCategoria() {
-        int idCategoria = ReportesHelper.leerId(scanner, "ID de la categoria: ");
-        int idPresupuesto = ReportesHelper.leerId(scanner, "ID del presupuesto: ");
-        short anio = MenuHelper.leerShort(scanner, "Anio: ");
-        short mes = MenuHelper.leerMes(scanner, "Mes: ");
-        BigDecimal resultado = presupuestoFuncionesDAO.obtenerTotalCategoriaMes(idCategoria, idPresupuesto, anio, mes);
-        ReportesHelper.imprimirResultadoMonetario("Total presupuestado de la categoria", resultado);
-    }
+            document.add(new Paragraph("Reporte 6: Analisis Historico y Promedio", fontTitulo));
+            document.add(new Paragraph("Analisis de los ultimos " + meses + " meses.\n\n", fontNormal));
 
-    private void funcMontoEjecutado() {
-        int idSubcategoria = ReportesHelper.leerId(scanner, "ID de la subcategoria: ");
-        short anio = MenuHelper.leerShort(scanner, "Anio: ");
-        short mes = MenuHelper.leerMes(scanner, "Mes: ");
-        BigDecimal resultado = transaccionDAO.calcularMontoEjecutado(idSubcategoria, anio, mes);
-        ReportesHelper.imprimirResultadoMonetario("Monto ejecutado", resultado);
-    }
+            try (ResultSet rs = cs.executeQuery()) {
+                if (rs.next()) {
+                    document.add(new Paragraph("El promedio de gasto en esta subcategoria a lo largo del tiempo indicado es de:", fontNormal));
+                    document.add(new Paragraph("L. " + rs.getBigDecimal(1), fontSubtitulo));
+                }
+            }
 
-    private void funcTotalEjecutadoCategoria() {
-        int idCategoria = ReportesHelper.leerId(scanner, "ID de la categoria: ");
-        short anio = MenuHelper.leerShort(scanner, "Anio: ");
-        short mes = MenuHelper.leerMes(scanner, "Mes: ");
-        BigDecimal resultado = transaccionDAO.obtenerTotalEjecutadoCategoriaMes(idCategoria, anio, mes);
-        ReportesHelper.imprimirResultadoMonetario("Total ejecutado de la categoria", resultado);
+            document.close();
+            System.out.println("Exito: Se ha generado el archivo " + archivo);
+        } catch (Exception e) {
+            System.out.println("Error al generar PDF: " + e.getMessage());
+        }
     }
 }

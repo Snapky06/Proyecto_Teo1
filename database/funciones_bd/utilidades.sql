@@ -24,3 +24,46 @@ BEGIN
     
     SUSPEND;
 END
+
+CREATE PROCEDURE sp_listar_categorias_por_tipo (
+    p_id_usuario INTEGER,
+    p_tipo VARCHAR(10)
+)
+RETURNS (
+    id_categoria INTEGER,
+    nombre VARCHAR(100)
+)
+AS
+BEGIN
+    FOR 
+        SELECT "id_categoria", "nombre"
+        FROM "categoria"
+        WHERE "id_usuario" = :p_id_usuario
+          AND UPPER("tipo") = UPPER(:p_tipo)
+        ORDER BY "orden_presentacion", "nombre"
+        INTO :id_categoria, :nombre
+    DO
+    BEGIN
+        SUSPEND;
+    END
+END
+
+CREATE PROCEDURE sp_listar_subcat_por_categoria (
+    p_id_categoria INTEGER
+)
+RETURNS (
+    p_id_subcategoria INTEGER,
+    p_nombre VARCHAR(100)
+)
+AS
+BEGIN
+    FOR 
+        SELECT "id_subcategoria", "nombre"
+        FROM "subcategoria"
+        WHERE "id_categoria" = :p_id_categoria
+        INTO :p_id_subcategoria, :p_nombre
+    DO
+    BEGIN
+        SUSPEND;
+    END
+END

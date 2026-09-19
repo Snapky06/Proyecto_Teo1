@@ -10,14 +10,17 @@ import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
 import com.proyecto.config.Database;
+import com.proyecto.cruds.CategoriaDAO;
+import com.proyecto.cruds.SubcategoriaDAO;
 import com.proyecto.menus.MenuBase;
 import com.proyecto.menus.MenuHelper;
+
 import java.io.FileOutputStream;
 import java.math.BigDecimal;
 import java.sql.CallableStatement;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.Map;
 import java.util.Scanner;
 
 public class ReportesMenu extends MenuBase {
@@ -28,6 +31,9 @@ public class ReportesMenu extends MenuBase {
     private final Font fontVerde = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11, new BaseColor(34, 139, 34));
     private final Font fontNaranja = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11, BaseColor.ORANGE);
     private final Font fontRojo = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11, BaseColor.RED);
+
+    private final SubcategoriaDAO subcategoriaDAO = new SubcategoriaDAO();
+    private final CategoriaDAO categoriaDAO = new CategoriaDAO();
 
     public ReportesMenu(Scanner scanner) {
         super(scanner);
@@ -90,8 +96,8 @@ public class ReportesMenu extends MenuBase {
         int idPresupuesto = MenuHelper.leerEntero(scanner, "ID del presupuesto: ");
         short anio = MenuHelper.leerShort(scanner, "Anio (Ej. 2026): ");
         short mes = MenuHelper.leerMes(scanner, "Mes (1-12): ");
+        String archivo = "Reporte_1_Balance_U" + idUsuario + "_" + anio + "_" + mes + ".pdf";
 
-        String archivo = "Reporte_1_Balance_Mensual.pdf";
         try (Connection conn = Database.obtenerConexion();
              CallableStatement cs = conn.prepareCall("{ call sp_calcular_balance_mensual(?, ?, ?, ?) }")) {
 
@@ -124,6 +130,7 @@ public class ReportesMenu extends MenuBase {
                     document.add(new Paragraph(generarBarraAscii((gastos.doubleValue() / maximo) * 100) + "\n\n", fontNormal));
 
                     document.add(new Paragraph("Total Ahorros: L. " + ahorros, fontNaranja));
+
                     document.add(new Paragraph("\nBalance Final Disponible: L. " + balance, fontSubtitulo));
 
                     document.close();
@@ -132,6 +139,7 @@ public class ReportesMenu extends MenuBase {
                     System.out.println("No hay datos para generar el reporte.");
                 }
             }
+
         } catch (Exception e) {
             System.out.println("Error al generar PDF: " + e.getMessage());
         }
@@ -142,9 +150,9 @@ public class ReportesMenu extends MenuBase {
         int idPresupuesto = MenuHelper.leerEntero(scanner, "ID del presupuesto: ");
         short anio = MenuHelper.leerShort(scanner, "Anio (Ej. 2026): ");
         short mes = MenuHelper.leerMes(scanner, "Mes (1-12): ");
+        String archivo = "Reporte_2__Distribucion_U" + idUsuario + "_" + anio + "_" + mes + ".pdf";
 
-        String archivo = "Reporte_2_Distribucion_Gastos.pdf";
-        try (Connection conn = Database.obtenerConexion()) {
+        try {
             Document document = new Document();
             PdfWriter.getInstance(document, new FileOutputStream(archivo));
             document.open();
@@ -152,23 +160,26 @@ public class ReportesMenu extends MenuBase {
             document.add(new Paragraph("Reporte 2: Distribucion de Gastos por Categoria", fontTitulo));
             document.add(new Paragraph("Periodo: " + mes + "/" + anio + "\n\n", fontNormal));
 
-            String sqlTotal = "{ call fn_obtener_total_ejecutado_categoria_mes(?, ?, ?) }";
-            String sqlCat = "SELECT id_categoria, nombre FROM categoria WHERE id_usuario = ? AND tipo = 'GASTO'";
-            
+            Map<Integer, String> categorias = categoriaDAO.obtenerCategoriasPorTipo(idUsuario, "GASTO");
+
+            Map<String, BigDecimal> gastosPorCategoria = new java.util.LinkedHashMap<>();
             BigDecimal granTotal = BigDecimal.ZERO;
 
-            try (PreparedStatement ps = conn.prepareStatement(sqlCat)) {
-                ps.setInt(1, idUsuario);
-                try (ResultSet rsCat = ps.executeQuery()) {
-                    while (rsCat.next()) {
-                        try (CallableStatement csTotal = conn.prepareCall(sqlTotal)) {
-                            csTotal.setInt(1, rsCat.getInt("id_categoria"));
-                            csTotal.setShort(2, anio);
-                            csTotal.setShort(3, mes);
-                            try (ResultSet rsTotal = csTotal.executeQuery()) {
-                                if (rsTotal.next() && rsTotal.getBigDecimal(1) != null) {
-                                    granTotal = granTotal.add(rsTotal.getBigDecimal(1));
-                                }
+            String sqlTotal = "{ call fn_obtener_total_ejecutado_categoria_mes(?, ?, ?) }";
+            try (Connection conn = Database.obtenerConexion();
+                 CallableStatement csTotal = conn.prepareCall(sqlTotal)) {
+
+                for (Map.Entry<Integer, String> entry : categorias.entrySet()) {
+                    csTotal.setInt(1, entry.getKey());
+                    csTotal.setShort(2, anio);
+                    csTotal.setShort(3, mes);
+
+                    try (ResultSet rsTotal = csTotal.executeQuery()) {
+                        if (rsTotal.next() && rsTotal.getBigDecimal(1) != null) {
+                            BigDecimal totalCat = rsTotal.getBigDecimal(1);
+                            if (totalCat.compareTo(BigDecimal.ZERO) > 0) {
+                                gastosPorCategoria.put(entry.getValue(), totalCat);
+                                granTotal = granTotal.add(totalCat);
                             }
                         }
                     }
@@ -178,140 +189,125 @@ public class ReportesMenu extends MenuBase {
             document.add(new Paragraph("Gasto Total del Mes: L. " + granTotal + "\n\n", fontSubtitulo));
 
             if (granTotal.compareTo(BigDecimal.ZERO) > 0) {
-                try (PreparedStatement ps = conn.prepareStatement(sqlCat)) {
-                    ps.setInt(1, idUsuario);
-                    try (ResultSet rsCat = ps.executeQuery()) {
-                        while (rsCat.next()) {
-                            String nombreCat = rsCat.getString("nombre");
-                            BigDecimal totalCat = BigDecimal.ZERO;
+                for (Map.Entry<String, BigDecimal> entry : gastosPorCategoria.entrySet()) {
+                    String nombreCat = entry.getKey();
+                    BigDecimal totalCat = entry.getValue();
 
-                            try (CallableStatement csTotal = conn.prepareCall(sqlTotal)) {
-                                csTotal.setInt(1, rsCat.getInt("id_categoria"));
-                                csTotal.setShort(2, anio);
-                                csTotal.setShort(3, mes);
-                                try (ResultSet rsTotal = csTotal.executeQuery()) {
-                                    if (rsTotal.next() && rsTotal.getBigDecimal(1) != null) {
-                                        totalCat = rsTotal.getBigDecimal(1);
-                                    }
-                                }
-                            }
+                    double pct = (totalCat.doubleValue() / granTotal.doubleValue()) * 100;
+                    String linea = String.format("%s: L. %.2f (%.1f%%)", nombreCat, totalCat, pct);
 
-                            if (totalCat.compareTo(BigDecimal.ZERO) > 0) {
-                                double pct = (totalCat.doubleValue() / granTotal.doubleValue()) * 100;
-                                String linea = String.format("%s: L. %.2f (%.1f%%)", nombreCat, totalCat, pct);
-                                document.add(new Paragraph(linea, fontNormal));
-                                document.add(new Paragraph(generarBarraAscii(pct) + "\n", fontNormal));
-                            }
-                        }
-                    }
+                    document.add(new Paragraph(linea, fontNormal));
+                    document.add(new Paragraph(generarBarraAscii(pct) + "\n", fontNormal));
                 }
             }
 
             document.close();
             System.out.println("Exito: Se ha generado el archivo " + archivo);
+
         } catch (Exception e) {
             System.out.println("Error al generar PDF: " + e.getMessage());
         }
     }
 
     private void generarReporteCumplimiento() {
-        int idUsuario = MenuHelper.leerEntero(scanner, "ID del usuario: ");
-        int idPresupuesto = MenuHelper.leerEntero(scanner, "ID del presupuesto: ");
-        short anio = MenuHelper.leerShort(scanner, "Anio (Ej. 2026): ");
-        short mes = MenuHelper.leerMes(scanner, "Mes (1-12): ");
+    int idUsuario = MenuHelper.leerEntero(scanner, "ID del usuario: ");
+    int idPresupuesto = MenuHelper.leerEntero(scanner, "ID del presupuesto: ");
+    short anio = MenuHelper.leerShort(scanner, "Anio (Ej. 2026): ");
+    short mes = MenuHelper.leerMes(scanner, "Mes (1-12): ");
+    String archivo = "Reporte_3_Cumplimiento_Presupuesto_U" + idUsuario + "_" + anio + "_" + mes + ".pdf";
 
-        String archivo = "Reporte_3_Cumplimiento_Presupuesto.pdf";
-        try (Connection conn = Database.obtenerConexion()) {
-            Document document = new Document();
-            PdfWriter.getInstance(document, new FileOutputStream(archivo));
-            document.open();
+    try {
+        Document document = new Document();
+        PdfWriter.getInstance(document, new FileOutputStream(archivo));
+        document.open();
 
-            document.add(new Paragraph("Reporte 3: Analisis de Cumplimiento de Presupuesto", fontTitulo));
-            document.add(new Paragraph("Periodo: " + mes + "/" + anio + "\n\n", fontNormal));
+        document.add(new Paragraph("Reporte 3: Analisis de Cumplimiento de Presupuesto", fontTitulo));
+        document.add(new Paragraph("Periodo: " + mes + "/" + anio + "\n\n", fontNormal));
 
-            String sqlCat = "SELECT id_categoria, nombre FROM categoria WHERE id_usuario = ? AND tipo = 'GASTO'";
-            String sqlResumen = "{ call sp_obtener_resumen_categoria_mes(?, ?, ?, ?) }";
-            String sqlSub = "SELECT id_subcategoria, nombre FROM subcategoria WHERE id_categoria = ?";
-            String sqlPctSub = "{ call fn_calcular_porcentaje_ejecutado(?, ?, ?, ?) }";
-            String sqlMontoSub = "{ call fn_calcular_monto_ejecutado(?, ?, ?) }";
+        Map<Integer, String> categorias = categoriaDAO.obtenerCategoriasPorTipo(idUsuario, "GASTO");
 
-            try (PreparedStatement psCat = conn.prepareStatement(sqlCat)) {
-                psCat.setInt(1, idUsuario);
-                try (ResultSet rsCat = psCat.executeQuery()) {
-                    while (rsCat.next()) {
-                        int idCat = rsCat.getInt("id_categoria");
-                        String nombreCat = rsCat.getString("nombre");
+        String sqlResumen = "{ call sp_obtener_resumen_categoria_mes(?, ?, ?, ?) }";
+        String sqlPctSub = "{ call fn_calcular_porcentaje_ejecutado(?, ?, ?, ?) }";
+        String sqlMontoSub = "{ call fn_calcular_monto_ejecutado(?, ?, ?) }";
 
-                        try (CallableStatement csRes = conn.prepareCall(sqlResumen)) {
-                            csRes.setInt(1, idCat);
-                            csRes.setInt(2, idPresupuesto);
-                            csRes.setShort(3, anio);
-                            csRes.setShort(4, mes);
-                            try (ResultSet rsRes = csRes.executeQuery()) {
-                                if (rsRes.next()) {
-                                    BigDecimal ppto = rsRes.getBigDecimal("monto_presupuestado");
-                                    BigDecimal ejec = rsRes.getBigDecimal("monto_ejecutado");
-                                    BigDecimal pct = rsRes.getBigDecimal("porcentaje_ejecucion");
+        try (Connection conn = Database.obtenerConexion();
+             CallableStatement csRes = conn.prepareCall(sqlResumen);
+             CallableStatement csPct = conn.prepareCall(sqlPctSub);
+             CallableStatement csMon = conn.prepareCall(sqlMontoSub)) {
 
-                                    document.add(new Paragraph("Categoria: " + nombreCat + " (Presupuestado: L." + ppto + " / Ejecutado: L." + ejec + ")", fontSubtitulo));
+            for (Map.Entry<Integer, String> entryCat : categorias.entrySet()) {
+                int idCat = entryCat.getKey();
+                String nombreCat = entryCat.getValue();
 
-                                    try (PreparedStatement psSub = conn.prepareStatement(sqlSub)) {
-                                        psSub.setInt(1, idCat);
-                                        try (ResultSet rsSub = psSub.executeQuery()) {
-                                            while (rsSub.next()) {
-                                                int idSub = rsSub.getInt("id_subcategoria");
-                                                String nomSub = rsSub.getString("nombre");
-                                                
-                                                BigDecimal subPct = BigDecimal.ZERO;
-                                                BigDecimal subMonto = BigDecimal.ZERO;
+                csRes.setInt(1, idCat);
+                csRes.setInt(2, idPresupuesto);
+                csRes.setShort(3, anio);
+                csRes.setShort(4, mes);
 
-                                                try (CallableStatement csPct = conn.prepareCall(sqlPctSub)) {
-                                                    csPct.setInt(1, idSub);
-                                                    csPct.setInt(2, idPresupuesto);
-                                                    csPct.setShort(3, anio);
-                                                    csPct.setShort(4, mes);
-                                                    ResultSet rsPct = csPct.executeQuery();
-                                                    if (rsPct.next() && rsPct.getBigDecimal(1) != null) subPct = rsPct.getBigDecimal(1);
-                                                }
+                try (ResultSet rsRes = csRes.executeQuery()) {
+                    if (rsRes.next()) {
+                        BigDecimal ppto = rsRes.getBigDecimal("monto_presupuestado");
+                        BigDecimal ejec = rsRes.getBigDecimal("monto_ejecutado");
 
-                                                try (CallableStatement csMon = conn.prepareCall(sqlMontoSub)) {
-                                                    csMon.setInt(1, idSub);
-                                                    csMon.setShort(2, anio);
-                                                    csMon.setShort(3, mes);
-                                                    ResultSet rsMon = csMon.executeQuery();
-                                                    if (rsMon.next() && rsMon.getBigDecimal(1) != null) subMonto = rsMon.getBigDecimal(1);
-                                                }
+                        document.add(new Paragraph("Categoria: " + nombreCat + " (Presupuestado: L." + ppto + " / Ejecutado: L." + ejec + ")", fontSubtitulo));
 
-                                                Font fuenteColor = fontVerde;
-                                                if (subPct.doubleValue() > 100) fuenteColor = fontRojo;
-                                                else if (subPct.doubleValue() >= 80) fuenteColor = fontNaranja;
+                        Map<Integer, String> subcategorias = subcategoriaDAO.obtenerSubcategoriasPorCategoria(idCat);
 
-                                                document.add(new Paragraph("   - " + nomSub + ": Ejecutado L." + subMonto + " (" + subPct + "%)", fuenteColor));
-                                            }
-                                        }
-                                    }
-                                    document.add(new Paragraph("\n"));
+                        for (Map.Entry<Integer, String> entrySub : subcategorias.entrySet()) {
+                            int idSub = entrySub.getKey();
+                            String nomSub = entrySub.getValue();
+
+                            BigDecimal subPct = BigDecimal.ZERO;
+                            BigDecimal subMonto = BigDecimal.ZERO;
+
+                            csPct.setInt(1, idSub);
+                            csPct.setInt(2, idPresupuesto);
+                            csPct.setShort(3, anio);
+                            csPct.setShort(4, mes);
+
+                            try (ResultSet rsPct = csPct.executeQuery()) {
+                                if (rsPct.next() && rsPct.getBigDecimal(1) != null) {
+                                    subPct = rsPct.getBigDecimal(1);
                                 }
                             }
+
+                            csMon.setInt(1, idSub);
+                            csMon.setShort(2, anio);
+                            csMon.setShort(3, mes);
+
+                            try (ResultSet rsMon = csMon.executeQuery()) {
+                                if (rsMon.next() && rsMon.getBigDecimal(1) != null) {
+                                    subMonto = rsMon.getBigDecimal(1);
+                                }
+                            }
+
+                            Font fuenteColor = fontVerde;
+                            if (subPct.doubleValue() > 100) fuenteColor = fontRojo;
+                            else if (subPct.doubleValue() >= 80) fuenteColor = fontNaranja;
+
+                            document.add(new Paragraph("   - " + nomSub + ": Ejecutado L." + subMonto + " (" + subPct + "%)", fuenteColor));
                         }
+                        document.add(new Paragraph("\n"));
                     }
                 }
             }
-
-            document.close();
-            System.out.println("Exito: Se ha generado el archivo " + archivo);
-        } catch (Exception e) {
-            System.out.println("Error al generar PDF: " + e.getMessage());
         }
+
+        document.close();
+        System.out.println("Exito: Se ha generado el archivo " + archivo);
+
+    } catch (Exception e) {
+        System.out.println("Error al generar PDF: " + e.getMessage());
     }
+}
 
     private void generarReporteObligaciones() {
         int idUsuario = MenuHelper.leerEntero(scanner, "ID del usuario: ");
         int idPresupuesto = MenuHelper.leerEntero(scanner, "ID del presupuesto: ");
         short anio = MenuHelper.leerShort(scanner, "Anio (Ej. 2026): ");
         short mes = MenuHelper.leerMes(scanner, "Mes (1-12): ");
+        String archivo = "Reporte_4_Estado_Obligaciones_U" + idUsuario + "_" + anio + "_" + mes + ".pdf";
 
-        String archivo = "Reporte_4_Estado_Obligaciones.pdf";
         try (Connection conn = Database.obtenerConexion();
              CallableStatement cs = conn.prepareCall("{ call sp_procesar_obligaciones_mes(?, ?, ?, ?) }")) {
 
@@ -339,6 +335,7 @@ public class ReportesMenu extends MenuBase {
                 while (rs.next()) {
                     String estado = rs.getString("p_estado_pago");
                     Font fuenteColor = fontNormal;
+
                     if (estado.equals("PAGADA")) fuenteColor = fontVerde;
                     else if (estado.equals("VENCIDA")) fuenteColor = fontRojo;
                     else if (estado.equals("POR VENCER")) fuenteColor = fontNaranja;
@@ -350,10 +347,10 @@ public class ReportesMenu extends MenuBase {
                     tabla.addCell(new Phrase(estado, fuenteColor));
                 }
             }
-
             document.add(tabla);
             document.close();
             System.out.println("Exito: Se ha generado el archivo " + archivo);
+
         } catch (Exception e) {
             System.out.println("Error al generar PDF: " + e.getMessage());
         }
@@ -363,8 +360,8 @@ public class ReportesMenu extends MenuBase {
         int idSubcategoria = MenuHelper.leerEntero(scanner, "ID de la subcategoria: ");
         short anio = MenuHelper.leerShort(scanner, "Anio (Ej. 2026): ");
         short mes = MenuHelper.leerMes(scanner, "Mes (1-12): ");
+        String archivo = "Reporte_5_Proyeccion_Gasto_U" + idSubcategoria + "_" + anio + "_" + mes + ".pdf";
 
-        String archivo = "Reporte_5_Proyeccion_Gasto.pdf";
         try (Connection conn = Database.obtenerConexion()) {
             Document document = new Document();
             PdfWriter.getInstance(document, new FileOutputStream(archivo));
@@ -398,6 +395,7 @@ public class ReportesMenu extends MenuBase {
 
             document.close();
             System.out.println("Exito: Se ha generado el archivo " + archivo);
+
         } catch (Exception e) {
             System.out.println("Error al generar PDF: " + e.getMessage());
         }
@@ -406,9 +404,10 @@ public class ReportesMenu extends MenuBase {
     private void generarReportePromedio() {
         int idUsuario = MenuHelper.leerEntero(scanner, "ID del usuario: ");
         int idSubcategoria = MenuHelper.leerEntero(scanner, "ID de la subcategoria: ");
-        int meses = ReportesHelper.leerCantidadMeses(scanner);
+        
+        int meses = MenuHelper.leerEntero(scanner, "Cantidad de meses a analizar: ");
+        String archivo = "Reporte_6_Promedio_Historico_U" + idUsuario + "_" + meses + ".pdf";
 
-        String archivo = "Reporte_6_Promedio_Historico.pdf";
         try (Connection conn = Database.obtenerConexion();
              CallableStatement cs = conn.prepareCall("{ call fn_obtener_promedio_gasto_subcategoria(?, ?, ?) }")) {
 
@@ -432,6 +431,7 @@ public class ReportesMenu extends MenuBase {
 
             document.close();
             System.out.println("Exito: Se ha generado el archivo " + archivo);
+
         } catch (Exception e) {
             System.out.println("Error al generar PDF: " + e.getMessage());
         }

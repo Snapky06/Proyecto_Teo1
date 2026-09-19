@@ -3,8 +3,11 @@ package com.proyecto.cruds;
 import com.proyecto.config.Database;
 import java.sql.Connection;
 import java.sql.CallableStatement;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import com.proyecto.BaseDAO;
+import java.util.Map;
+import java.util.LinkedHashMap;
 
 public class CategoriaDAO extends BaseDAO {
 
@@ -77,4 +80,27 @@ public class CategoriaDAO extends BaseDAO {
             System.out.println("Error al consultar la categoria: " + e.getMessage());
         }
     }
+
+
+public Map<Integer, String> obtenerCategoriasPorTipo(int idUsuario, String tipo) {
+    Map<Integer, String> categorias = new LinkedHashMap<>();
+    String sql = "SELECT id_categoria, nombre FROM sp_listar_categorias_por_tipo(?, ?)";
+    
+    try (Connection conn = Database.obtenerConexion();
+         PreparedStatement ps = conn.prepareStatement(sql)) {
+        
+        ps.setInt(1, idUsuario);
+        ps.setString(2, tipo);
+        
+        try (ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                categorias.put(rs.getInt("id_categoria"), rs.getString("nombre"));
+            }
+        }
+    } catch (Exception e) {
+        System.err.println("Error al obtener categorias: " + e.getMessage());
+    }
+    
+    return categorias;
+}
 }

@@ -2,13 +2,11 @@ package com.proyecto.cruds;
 
 import com.proyecto.config.Database;
 
-import java.sql.PreparedStatement;
 import java.sql.Connection;
 import java.sql.CallableStatement;
 import java.sql.ResultSet;
 import com.proyecto.BaseDAO;
 import java.util.Map;
-import java.util.LinkedHashMap;
 
 public class SubcategoriaDAO extends BaseDAO {
 
@@ -76,24 +74,6 @@ public class SubcategoriaDAO extends BaseDAO {
     }
 
     public Map<Integer, String> obtenerSubcategoriasPorCategoria(int idCategoria) {
-    Map<Integer, String> subcategorias = new LinkedHashMap<>();
-    
-    String sql = "SELECT p_id_subcategoria, p_nombre FROM sp_listar_subcat_por_categoria(?)";
-    
-    try (Connection conn = Database.obtenerConexion();
-         PreparedStatement ps = conn.prepareStatement(sql)) {
-        
-        ps.setInt(1, idCategoria);
-        
-        try (ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                subcategorias.put(rs.getInt("p_id_subcategoria"), rs.getString("p_nombre"));
-            }
-        }
-    } catch (Exception e) {
-        System.out.println("Error al obtener subcategorias: " + e.getMessage());
-    }
-    
-    return subcategorias;
+    return ejecutarFuncionDiccionario("{ call sp_listar_subcat_por_categoria(?) }", "Error al obtener subcategorias", idCategoria);
 }
 }

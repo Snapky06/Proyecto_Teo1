@@ -87,12 +87,13 @@ BEGIN
 
 END
 
-CREATE PROCEDURE sp_listar_presupuesto_detalles (
+ALTER PROCEDURE sp_listar_presupuesto_detalles (
     p_id_presupuesto INTEGER
 )
 RETURNS (
     p_id_detalle INTEGER,
     p_id_subcategoria INTEGER,
+    p_nombre_subcategoria VARCHAR(100), 
     p_monto_mensual NUMERIC(12,2),
     p_observaciones VARCHAR(255),
     p_creado_por VARCHAR(50),
@@ -103,15 +104,28 @@ RETURNS (
 AS
 BEGIN
     FOR SELECT 
-        "id_detalle", "id_subcategoria", "monto_mensual", 
-        "observaciones", "creado_por", "modificado_por", 
-        "creado_en", "modificado_en"
-    FROM "presupuesto_detalle"
-    WHERE "id_presupuesto" = :p_id_presupuesto
+        d."id_detalle", 
+        d."id_subcategoria", 
+        s."nombre",                    
+        d."monto_mensual", 
+        d."observaciones", 
+        d."creado_por", 
+        d."modificado_por", 
+        d."creado_en", 
+        d."modificado_en"
+    FROM "presupuesto_detalle" d
+    JOIN "subcategoria" s ON d."id_subcategoria" = s."id_subcategoria" 
+    WHERE d."id_presupuesto" = :p_id_presupuesto
     INTO 
-        :p_id_detalle, :p_id_subcategoria, :p_monto_mensual, 
-        :p_observaciones, :p_creado_por, :p_modificado_por, 
-        :p_creado_en, :p_modificado_en
+        :p_id_detalle, 
+        :p_id_subcategoria, 
+        :p_nombre_subcategoria,         
+        :p_monto_mensual, 
+        :p_observaciones, 
+        :p_creado_por, 
+        :p_modificado_por, 
+        :p_creado_en, 
+        :p_modificado_en
     DO
     BEGIN
         SUSPEND;

@@ -6,6 +6,8 @@ import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.Map;
+import java.util.LinkedHashMap;
 
 public abstract class BaseDAO {
 
@@ -98,4 +100,24 @@ public abstract class BaseDAO {
         }
         return null;
     }
+
+    protected Map<Integer, String> ejecutarFuncionDiccionario(String sql, String mensajeError, Object... parametros) {
+    Map<Integer, String> resultado = new LinkedHashMap<>();
+    
+    try (Connection conn = Database.obtenerConexion();
+         CallableStatement cs = conn.prepareCall(sql)) {
+         
+        asignarParametros(cs, parametros);
+        
+        try (ResultSet rs = cs.executeQuery()) {
+            while (rs.next()) {
+                resultado.put(rs.getInt(1), rs.getString(2));
+            }
+        }
+    } catch (Exception e) {
+        System.out.println(mensajeError + ": " + e.getMessage());
+    }
+    
+    return resultado;
+}
 }

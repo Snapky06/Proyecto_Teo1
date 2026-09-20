@@ -3,22 +3,28 @@ package com.proyecto.menus.cruds_menu;
 import com.proyecto.cruds.PresupuestoDAO;
 import com.proyecto.cruds.PresupuestoDetalleDAO;
 import com.proyecto.funciones.ProcedimientosNegocioDAO;
+import com.proyecto.cruds.SubcategoriaDAO;
+import com.proyecto.cruds.CategoriaDAO;
 import com.proyecto.menus.MenuBase;
 import com.proyecto.menus.MenuHelper;
 import java.math.BigDecimal;
+import java.util.Map;
 import java.util.Scanner;
 
 public class PresupuestoMenu extends MenuBase {
-
     private final PresupuestoDAO presupuestoDAO;
     private final PresupuestoDetalleDAO detalleDAO;
     private final ProcedimientosNegocioDAO negocioDAO;
+    private final SubcategoriaDAO subcategoriaDAO;
+    private final CategoriaDAO categoriaDAO;
 
     public PresupuestoMenu(Scanner scanner) {
         super(scanner);
         this.presupuestoDAO = new PresupuestoDAO();
         this.detalleDAO = new PresupuestoDetalleDAO();
         this.negocioDAO = new ProcedimientosNegocioDAO();
+        this.subcategoriaDAO = new SubcategoriaDAO();
+        this.categoriaDAO = new CategoriaDAO();
     }
 
     @Override
@@ -71,95 +77,154 @@ public class PresupuestoMenu extends MenuBase {
     }
 
     private void registrarPresupuesto() {
-        int idUsuario = MenuHelper.leerEntero(scanner, "ID del usuario: ");
-        String nombre = MenuHelper.leerTexto(scanner, "Nombre del presupuesto: ");
-        short anioInicio = MenuHelper.leerShort(scanner, "Anio de inicio: ");
-        short mesInicio = MenuHelper.leerMes(scanner, "Mes de inicio: ");
-        short anioFin = MenuHelper.leerShort(scanner, "Anio de fin: ");
-        short mesFin = MenuHelper.leerMes(scanner, "Mes de fin: ");
-
-        if (!periodoValido(anioInicio, mesInicio, anioFin, mesFin)) {
-            System.out.println("El periodo final no puede ser anterior al inicial.");
-            return;
+        try {
+            int idUsuario = obtenerIdUsuario();
+            String nombre = MenuHelper.leerTexto(scanner, "Nombre del presupuesto");
+            short anioInicio = MenuHelper.leerShort(scanner, "Anio de inicio");
+            short mesInicio = MenuHelper.leerMes(scanner, "Mes de inicio");
+            short anioFin = MenuHelper.leerShort(scanner, "Anio de fin");
+            short mesFin = MenuHelper.leerMes(scanner, "Mes de fin");
+            
+            if (!periodoValido(anioInicio, mesInicio, anioFin, mesFin)) {
+                System.out.println("El periodo final no puede ser anterior al inicial.");
+                return;
+            }
+            
+            BigDecimal ingresos = BigDecimal.ZERO;
+            BigDecimal gastos = BigDecimal.ZERO;
+            BigDecimal ahorro = BigDecimal.ZERO;
+            
+            presupuestoDAO.insertarPresupuesto(idUsuario, nombre, anioInicio, mesInicio, anioFin, mesFin, ingresos, gastos, ahorro, "ACTIVO", MenuHelper.USUARIO_SISTEMA);
+        } catch (MenuHelper.OperacionCanceladaException e) {
+            System.out.println("\n[!] Operacion cancelada por el usuario.\n");
         }
-
-        BigDecimal ingresos = MenuHelper.leerDecimal(scanner, "Total de ingresos planificados: ");
-        BigDecimal gastos = MenuHelper.leerDecimal(scanner, "Total de gastos planificados: ");
-        BigDecimal ahorro = MenuHelper.leerDecimal(scanner, "Total de ahorro planificado: ");
-
-        presupuestoDAO.insertarPresupuesto(idUsuario, nombre, anioInicio, mesInicio, anioFin, mesFin, ingresos, gastos, ahorro, "ACTIVO", MenuHelper.USUARIO_SISTEMA);
     }
 
     private void listarPresupuestos() {
-        int idUsuario = MenuHelper.leerEntero(scanner, "ID del usuario: ");
-        presupuestoDAO.listarPresupuestos(idUsuario);
+        try {
+            int idUsuario = obtenerIdUsuario();
+            presupuestoDAO.listarPresupuestos(idUsuario);
+        } catch (MenuHelper.OperacionCanceladaException e) {
+            System.out.println("\n[!] Operacion cancelada por el usuario.\n");
+        }
     }
 
     private void consultarPresupuesto() {
-        int idPresupuesto = MenuHelper.leerEntero(scanner, "ID del presupuesto: ");
-        presupuestoDAO.consultarPresupuesto(idPresupuesto);
+        try {
+            int idUsuario = obtenerIdUsuario();
+            System.out.println("\n=================================================");
+            System.out.println("          LISTA DE PRESUPUESTOS DISPONIBLES      ");
+            System.out.println("=================================================");
+            presupuestoDAO.listarPresupuestos(idUsuario);
+            System.out.println("=================================================");
+            
+            int idPresupuesto = MenuHelper.leerEntero(scanner, "ID del presupuesto");
+            presupuestoDAO.consultarPresupuesto(idPresupuesto);
+        } catch (MenuHelper.OperacionCanceladaException e) {
+            System.out.println("\n[!] Operacion cancelada por el usuario.\n");
+        }
     }
 
     private void actualizarPresupuesto() {
-        int idPresupuesto = MenuHelper.leerEntero(scanner, "ID del presupuesto: ");
-        String nombre = MenuHelper.leerTexto(scanner, "Nuevo nombre: ");
-        short anioInicio = MenuHelper.leerShort(scanner, "Nuevo anio de inicio: ");
-        short mesInicio = MenuHelper.leerMes(scanner, "Nuevo mes de inicio: ");
-        short anioFin = MenuHelper.leerShort(scanner, "Nuevo anio de fin: ");
-        short mesFin = MenuHelper.leerMes(scanner, "Nuevo mes de fin: ");
-
-        if (!periodoValido(anioInicio, mesInicio, anioFin, mesFin)) {
-            System.out.println("El periodo final no puede ser anterior al inicial.");
-            return;
+        try {
+            int idUsuario = obtenerIdUsuario();
+            System.out.println("\n=================================================");
+            System.out.println("          LISTA DE PRESUPUESTOS DISPONIBLES      ");
+            System.out.println("=================================================");
+            presupuestoDAO.listarPresupuestos(idUsuario);
+            System.out.println("=================================================");
+            
+            int idPresupuesto = MenuHelper.leerEntero(scanner, "ID del presupuesto");
+            String nombre = MenuHelper.leerTexto(scanner, "Nuevo nombre");
+            short anioInicio = MenuHelper.leerShort(scanner, "Nuevo anio de inicio");
+            short mesInicio = MenuHelper.leerMes(scanner, "Nuevo mes de inicio");
+            short anioFin = MenuHelper.leerShort(scanner, "Nuevo anio de fin");
+            short mesFin = MenuHelper.leerMes(scanner, "Nuevo mes de fin");
+            
+            if (!periodoValido(anioInicio, mesInicio, anioFin, mesFin)) {
+                System.out.println("El periodo final no puede ser anterior al inicial.");
+                return;
+            }
+            
+            BigDecimal ingresos = BigDecimal.ZERO;
+            BigDecimal gastos = BigDecimal.ZERO;
+            BigDecimal ahorro = BigDecimal.ZERO;
+            String estado = MenuHelper.leerEstadoPresupuesto(scanner);
+            
+            presupuestoDAO.actualizarPresupuesto(idPresupuesto, nombre, anioInicio, mesInicio, anioFin, mesFin, ingresos, gastos, ahorro, estado, MenuHelper.USUARIO_SISTEMA);
+        } catch (MenuHelper.OperacionCanceladaException e) {
+            System.out.println("\n[!] Operacion cancelada por el usuario.\n");
         }
-
-        BigDecimal ingresos = MenuHelper.leerDecimal(scanner, "Nuevos ingresos planificados: ");
-        BigDecimal gastos = MenuHelper.leerDecimal(scanner, "Nuevos gastos planificados: ");
-        BigDecimal ahorro = MenuHelper.leerDecimal(scanner, "Nuevo ahorro planificado: ");
-        String estado = MenuHelper.leerEstadoPresupuesto(scanner);
-
-        presupuestoDAO.actualizarPresupuesto(idPresupuesto, nombre, anioInicio, mesInicio, anioFin, mesFin, ingresos, gastos, ahorro, estado, MenuHelper.USUARIO_SISTEMA);
     }
 
     private void eliminarPresupuesto() {
-        int idPresupuesto = MenuHelper.leerEntero(scanner, "ID del presupuesto: ");
-        if (MenuHelper.confirmar(scanner)) {
-            presupuestoDAO.eliminarPresupuesto(idPresupuesto);
-        } else {
-            System.out.println("Operacion cancelada.");
+        try {
+            int idUsuario = obtenerIdUsuario();
+            System.out.println("\n=================================================");
+            System.out.println("          LISTA DE PRESUPUESTOS DISPONIBLES      ");
+            System.out.println("=================================================");
+            presupuestoDAO.listarPresupuestos(idUsuario);
+            System.out.println("=================================================");
+            
+            int idPresupuesto = MenuHelper.leerEntero(scanner, "ID del presupuesto");
+            if (MenuHelper.confirmar(scanner)) {
+                presupuestoDAO.eliminarPresupuesto(idPresupuesto);
+            } else {
+                System.out.println("Operacion cancelada.");
+            }
+        } catch (MenuHelper.OperacionCanceladaException e) {
+            System.out.println("\n[!] Operacion cancelada por el usuario.\n");
         }
     }
 
     private void cerrarPresupuesto() {
-        int idPresupuesto = MenuHelper.leerEntero(scanner, "ID del presupuesto: ");
-        if (MenuHelper.confirmar(scanner)) {
-            negocioDAO.cerrarPresupuesto(idPresupuesto, MenuHelper.USUARIO_SISTEMA);
-        } else {
-            System.out.println("Operacion cancelada.");
+        try {
+            int idUsuario = obtenerIdUsuario();
+            System.out.println("\n=================================================");
+            System.out.println("          LISTA DE PRESUPUESTOS DISPONIBLES      ");
+            System.out.println("=================================================");
+            presupuestoDAO.listarPresupuestos(idUsuario);
+            System.out.println("=================================================");
+            
+            int idPresupuesto = MenuHelper.leerEntero(scanner, "ID del presupuesto");
+            if (MenuHelper.confirmar(scanner)) {
+                negocioDAO.cerrarPresupuesto(idPresupuesto, MenuHelper.USUARIO_SISTEMA);
+            } else {
+                System.out.println("Operacion cancelada.");
+            }
+        } catch (MenuHelper.OperacionCanceladaException e) {
+            System.out.println("\n[!] Operacion cancelada por el usuario.\n");
         }
     }
 
     private void crearPresupuestoCompleto() {
-        int idUsuario = MenuHelper.leerEntero(scanner, "ID del usuario: ");
-        String nombre = MenuHelper.leerTexto(scanner, "Nombre del presupuesto: ");
-        short anioInicio = MenuHelper.leerShort(scanner, "Anio de inicio: ");
-        short mesInicio = MenuHelper.leerMes(scanner, "Mes de inicio: ");
-        short anioFin = MenuHelper.leerShort(scanner, "Anio de fin: ");
-        short mesFin = MenuHelper.leerMes(scanner, "Mes de fin: ");
-
-        if (!periodoValido(anioInicio, mesInicio, anioFin, mesFin)) {
-            System.out.println("El periodo final no puede ser anterior al inicial.");
-            return;
+        try {
+            int idUsuario = obtenerIdUsuario();
+            String nombre = MenuHelper.leerTexto(scanner, "Nombre del presupuesto");
+            short anioInicio = MenuHelper.leerShort(scanner, "Anio de inicio");
+            short mesInicio = MenuHelper.leerMes(scanner, "Mes de inicio");
+            short anioFin = MenuHelper.leerShort(scanner, "Anio de fin");
+            short mesFin = MenuHelper.leerMes(scanner, "Mes de fin");
+            
+            if (!periodoValido(anioInicio, mesInicio, anioFin, mesFin)) {
+                System.out.println("El periodo final no puede ser anterior al inicial.");
+                return;
+            }
+            
+            System.out.println("Escriba el JSON completo en una sola linea (o CANCELAR):");
+            String json = scanner.nextLine().trim();
+            if (json.equalsIgnoreCase("CANCELAR") || json.equalsIgnoreCase("X")) {
+                throw new MenuHelper.OperacionCanceladaException();
+            }
+            if (json.isEmpty()) {
+                System.out.println("El JSON no puede quedar vacio.");
+                return;
+            }
+            
+            presupuestoDAO.crearPresupuestoCompleto(idUsuario, nombre, anioInicio, mesInicio, anioFin, mesFin, json, MenuHelper.USUARIO_SISTEMA);
+        } catch (MenuHelper.OperacionCanceladaException e) {
+            System.out.println("\n[!] Operacion cancelada por el usuario.\n");
         }
-
-        System.out.println("Escriba el JSON completo en una sola linea:");
-        String json = scanner.nextLine().trim();
-        if (json.isEmpty()) {
-            System.out.println("El JSON no puede quedar vacio.");
-            return;
-        }
-
-        presupuestoDAO.crearPresupuestoCompleto(idUsuario, nombre, anioInicio, mesInicio, anioFin, mesFin, json, MenuHelper.USUARIO_SISTEMA);
     }
 
     private void menuDetalles() {
@@ -173,65 +238,157 @@ public class PresupuestoMenu extends MenuBase {
             System.out.println("5. Eliminar detalle");
             System.out.println("0. Volver");
             
-            int opcion = MenuHelper.leerEntero(scanner, "Elige una opcion: ");
-            switch (opcion) {
-                case 1:
-                    registrarDetalle();
-                    break;
-                case 2:
-                    listarDetalles();
-                    break;
-                case 3:
-                    consultarDetalle();
-                    break;
-                case 4:
-                    actualizarDetalle();
-                    break;
-                case 5:
-                    eliminarDetalle();
-                    break;
-                case 0:
-                    salirDetalles = true;
-                    break;
-                default:
-                    System.out.println("Opcion no valida.");
+            try {
+                int opcion = MenuHelper.leerOpcionMenu(scanner, "Elige una opcion: ");
+                switch (opcion) {
+                    case 1:
+                        registrarDetalle();
+                        break;
+                    case 2:
+                        listarDetalles();
+                        break;
+                    case 3:
+                        consultarDetalle();
+                        break;
+                    case 4:
+                        actualizarDetalle();
+                        break;
+                    case 5:
+                        eliminarDetalle();
+                        break;
+                    case 0:
+                        salirDetalles = true;
+                        break;
+                    default:
+                        System.out.println("Opcion no valida.");
+                }
+            } catch (MenuHelper.OperacionCanceladaException e) {
+                System.out.println("\n[!] Operacion cancelada. Saliendo del menu de detalles...\n");
+                salirDetalles = true;
             }
         }
     }
 
     private void registrarDetalle() {
-        int idPresupuesto = MenuHelper.leerEntero(scanner, "ID del presupuesto: ");
-        int idSubcategoria = MenuHelper.leerEntero(scanner, "ID de la subcategoria: ");
-        BigDecimal monto = MenuHelper.leerDecimal(scanner, "Monto mensual: ");
-        String observaciones = MenuHelper.leerTextoOpcional(scanner, "Observaciones o vacio: ");
-
-        detalleDAO.insertarDetalle(idPresupuesto, idSubcategoria, monto, observaciones, MenuHelper.USUARIO_SISTEMA);
+        try {
+            int idUsuario = obtenerIdUsuario();
+            
+            System.out.println("\n=================================================");
+            System.out.println("          LISTA DE PRESUPUESTOS DISPONIBLES      ");
+            System.out.println("=================================================");
+            presupuestoDAO.listarPresupuestos(idUsuario);
+            System.out.println("=================================================");
+            int idPresupuesto = MenuHelper.leerEntero(scanner, "ID del presupuesto");
+            
+            System.out.println("\n=================================================");
+            System.out.println("          DIRECTORIO DE SUBCATEGORIAS            ");
+            System.out.println("=================================================");
+            Map<Integer, String> categorias = categoriaDAO.obtenerCategoriasPorTipo(idUsuario, "INGRESO");
+            categorias.putAll(categoriaDAO.obtenerCategoriasPorTipo(idUsuario, "GASTO"));
+            for (Map.Entry<Integer, String> entry : categorias.entrySet()) {
+                System.out.println("\n-> Categoria ID: " + entry.getKey() + " | Nombre: " + entry.getValue());
+                subcategoriaDAO.listarSubcategorias(entry.getKey());
+            }
+            System.out.println("=================================================");
+            int idSubcategoria = MenuHelper.leerEntero(scanner, "ID de la subcategoria");
+            
+            BigDecimal monto = MenuHelper.leerDecimal(scanner, "Monto mensual");
+            String observaciones = MenuHelper.leerTextoOpcional(scanner, "Observaciones o vacio");
+            
+            detalleDAO.insertarDetalle(idPresupuesto, idSubcategoria, monto, observaciones, MenuHelper.USUARIO_SISTEMA);
+        } catch (MenuHelper.OperacionCanceladaException e) {
+            System.out.println("\n[!] Operacion cancelada por el usuario.\n");
+        }
     }
 
     private void listarDetalles() {
-        int idPresupuesto = MenuHelper.leerEntero(scanner, "ID del presupuesto: ");
-        detalleDAO.listarDetalles(idPresupuesto);
+        try {
+            int idUsuario = obtenerIdUsuario();
+            System.out.println("\n=================================================");
+            System.out.println("          LISTA DE PRESUPUESTOS DISPONIBLES      ");
+            System.out.println("=================================================");
+            presupuestoDAO.listarPresupuestos(idUsuario);
+            System.out.println("=================================================");
+            int idPresupuesto = MenuHelper.leerEntero(scanner, "ID del presupuesto");
+            detalleDAO.listarDetalles(idPresupuesto);
+        } catch (MenuHelper.OperacionCanceladaException e) {
+            System.out.println("\n[!] Operacion cancelada por el usuario.\n");
+        }
     }
 
     private void consultarDetalle() {
-        int idDetalle = MenuHelper.leerEntero(scanner, "ID del detalle: ");
-        detalleDAO.consultarDetalle(idDetalle);
+        try {
+            int idUsuario = obtenerIdUsuario();
+            System.out.println("\n=================================================");
+            System.out.println("          LISTA DE PRESUPUESTOS DISPONIBLES      ");
+            System.out.println("=================================================");
+            presupuestoDAO.listarPresupuestos(idUsuario);
+            System.out.println("=================================================");
+            int idPresupuesto = MenuHelper.leerEntero(scanner, "ID del presupuesto");
+            
+            System.out.println("\n=================================================");
+            System.out.println("          DETALLES DEL PRESUPUESTO               ");
+            System.out.println("=================================================");
+            detalleDAO.listarDetalles(idPresupuesto);
+            System.out.println("=================================================");
+            int idDetalle = MenuHelper.leerEntero(scanner, "ID del detalle a consultar");
+            
+            detalleDAO.consultarDetalle(idDetalle);
+        } catch (MenuHelper.OperacionCanceladaException e) {
+            System.out.println("\n[!] Operacion cancelada por el usuario.\n");
+        }
     }
 
     private void actualizarDetalle() {
-        int idDetalle = MenuHelper.leerEntero(scanner, "ID del detalle: ");
-        BigDecimal monto = MenuHelper.leerDecimal(scanner, "Nuevo monto mensual: ");
-        String observaciones = MenuHelper.leerTextoOpcional(scanner, "Nuevas observaciones o vacio: ");
-
-        detalleDAO.actualizarDetalle(idDetalle, monto, observaciones, MenuHelper.USUARIO_SISTEMA);
+        try {
+            int idUsuario = obtenerIdUsuario();
+            System.out.println("\n=================================================");
+            System.out.println("          LISTA DE PRESUPUESTOS DISPONIBLES      ");
+            System.out.println("=================================================");
+            presupuestoDAO.listarPresupuestos(idUsuario);
+            System.out.println("=================================================");
+            int idPresupuesto = MenuHelper.leerEntero(scanner, "ID del presupuesto");
+            
+            System.out.println("\n=================================================");
+            System.out.println("          DETALLES DEL PRESUPUESTO               ");
+            System.out.println("=================================================");
+            detalleDAO.listarDetalles(idPresupuesto);
+            System.out.println("=================================================");
+            int idDetalle = MenuHelper.leerEntero(scanner, "ID del detalle a actualizar");
+            
+            BigDecimal monto = MenuHelper.leerDecimal(scanner, "Nuevo monto mensual");
+            String observaciones = MenuHelper.leerTextoOpcional(scanner, "Nuevas observaciones o vacio");
+            
+            detalleDAO.actualizarDetalle(idDetalle, monto, observaciones, MenuHelper.USUARIO_SISTEMA);
+        } catch (MenuHelper.OperacionCanceladaException e) {
+            System.out.println("\n[!] Operacion cancelada por el usuario.\n");
+        }
     }
 
     private void eliminarDetalle() {
-        int idDetalle = MenuHelper.leerEntero(scanner, "ID del detalle: ");
-        if (MenuHelper.confirmar(scanner)) {
-            detalleDAO.eliminarDetalle(idDetalle);
-        } else {
-            System.out.println("Operacion cancelada.");
+        try {
+            int idUsuario = obtenerIdUsuario();
+            System.out.println("\n=================================================");
+            System.out.println("          LISTA DE PRESUPUESTOS DISPONIBLES      ");
+            System.out.println("=================================================");
+            presupuestoDAO.listarPresupuestos(idUsuario);
+            System.out.println("=================================================");
+            int idPresupuesto = MenuHelper.leerEntero(scanner, "ID del presupuesto");
+            
+            System.out.println("\n=================================================");
+            System.out.println("          DETALLES DEL PRESUPUESTO               ");
+            System.out.println("=================================================");
+            detalleDAO.listarDetalles(idPresupuesto);
+            System.out.println("=================================================");
+            int idDetalle = MenuHelper.leerEntero(scanner, "ID del detalle a eliminar");
+            
+            if (MenuHelper.confirmar(scanner)) {
+                detalleDAO.eliminarDetalle(idDetalle);
+            } else {
+                System.out.println("Operacion cancelada.");
+            }
+        } catch (MenuHelper.OperacionCanceladaException e) {
+            System.out.println("\n[!] Operacion cancelada por el usuario.\n");
         }
     }
 

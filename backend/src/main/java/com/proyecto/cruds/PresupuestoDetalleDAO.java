@@ -11,14 +11,14 @@ public class PresupuestoDetalleDAO extends BaseDAO {
 
     public void insertarDetalle(int idPresupuesto, int idSubcategoria, BigDecimal montoMensual, String observaciones, String creadoPor) {
         String sql = "EXECUTE PROCEDURE sp_insertar_presupuesto_detalle(?, ?, ?, ?, ?)";
-        ejecutarProcedimiento(sql, "Detalle de presupuesto registrado correctamente.", "Error al registrar el detalle", 
-            idPresupuesto, idSubcategoria, montoMensual, observaciones, creadoPor);
+        ejecutarProcedimiento(sql, "Detalle de presupuesto registrado correctamente.", "Error al registrar el detalle",
+             idPresupuesto, idSubcategoria, montoMensual, observaciones, creadoPor);
     }
 
     public void actualizarDetalle(int idDetalle, BigDecimal montoMensual, String observaciones, String modificadoPor) {
         String sql = "EXECUTE PROCEDURE sp_actualizar_presupuesto_detalle(?, ?, ?, ?)";
-        ejecutarProcedimiento(sql, "Detalle actualizado correctamente.", "Error al actualizar el detalle", 
-            idDetalle, montoMensual, observaciones, modificadoPor);
+        ejecutarProcedimiento(sql, "Detalle actualizado correctamente.", "Error al actualizar el detalle",
+             idDetalle, montoMensual, observaciones, modificadoPor);
     }
 
     public void eliminarDetalle(int idDetalle) {
@@ -34,9 +34,11 @@ public class PresupuestoDetalleDAO extends BaseDAO {
             try (ResultSet rs = cs.executeQuery()) {
                 while (rs.next()) {
                     System.out.println("ID Detalle: " + rs.getInt("p_id_detalle"));
-                    System.out.println("ID Subcategoria: " + rs.getInt("p_id_subcategoria"));
-                    System.out.println("Monto mensual: " + rs.getBigDecimal("p_monto_mensual"));
-                    System.out.println("Observaciones: " + rs.getString("p_observaciones"));
+                    System.out.println("Subcategoria: " + rs.getString("p_nombre_subcategoria") + " (ID: " + rs.getInt("p_id_subcategoria") + ")");
+                    System.out.println("Monto mensual: L. " + rs.getBigDecimal("p_monto_mensual"));
+                    
+                    String obs = rs.getString("p_observaciones");
+                    System.out.println("Observaciones: " + (obs != null && !obs.trim().isEmpty() ? obs : "Ninguna"));
                     System.out.println("--------------------------------");
                 }
             }
@@ -54,11 +56,15 @@ public class PresupuestoDetalleDAO extends BaseDAO {
                 if (rs.next()) {
                     System.out.println("--- DETALLES DEL REGISTRO ---");
                     System.out.println("ID Presupuesto: " + rs.getInt("p_id_presupuesto"));
-                    System.out.println("ID Subcategoria: " + rs.getInt("p_id_subcategoria"));
-                    System.out.println("Monto mensual: " + rs.getBigDecimal("p_monto_mensual"));
-                    System.out.println("Observaciones: " + rs.getString("p_observaciones"));
+                    System.out.println("Subcategoria: " + rs.getString("p_nombre_subcategoria") + " (ID: " + rs.getInt("p_id_subcategoria") + ")");
+                    System.out.println("Monto mensual: L. " + rs.getBigDecimal("p_monto_mensual"));
+                    
+                    String obs = rs.getString("p_observaciones");
+                    System.out.println("Observaciones: " + (obs != null && !obs.trim().isEmpty() ? obs : "Ninguna"));
                     System.out.println("Creado por: " + rs.getString("p_creado_por"));
                     System.out.println("Creado en: " + rs.getTimestamp("p_creado_en"));
+                    System.out.println("Modificado por: " + rs.getString("p_modificado_por"));
+                    System.out.println("Modificado en: " + rs.getTimestamp("p_modificado_en"));
                     System.out.println("--------------------------------");
                 } else {
                     System.out.println("No se encontro el detalle.");

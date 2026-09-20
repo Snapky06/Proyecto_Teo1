@@ -67,3 +67,21 @@ BEGIN
         SUSPEND;
     END
 END
+
+CREATE  PROCEDURE sp_login_usuario (
+    p_nombres VARCHAR(100)
+)
+RETURNS (
+    p_id_usuario INTEGER
+)
+AS
+BEGIN
+    p_id_usuario = NULL;
+
+    SELECT "id_usuario"
+    FROM "usuario"
+    WHERE "nombres" = :p_nombres AND "estado" = TRUE
+    INTO :p_id_usuario;
+
+    SUSPEND;
+END

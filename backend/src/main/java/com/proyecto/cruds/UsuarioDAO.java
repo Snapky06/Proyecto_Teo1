@@ -68,4 +68,10 @@ public class UsuarioDAO extends BaseDAO {
             System.out.println("Error al consultar el usuario: " + e.getMessage());
         }
     }
+
+    public Integer loginPorNombre(String nombres) {
+    String sql = "{ call sp_login_usuario(?) }";
+    return ejecutarFuncionEntera(sql, "Error al intentar iniciar sesion", nombres);
+}
+
 }

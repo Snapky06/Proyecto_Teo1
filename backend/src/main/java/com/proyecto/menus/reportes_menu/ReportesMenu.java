@@ -45,8 +45,6 @@ public class ReportesMenu extends MenuBase {
         System.out.println("2. Exportar Reporte 2: Distribucion de Gastos por Categoria");
         System.out.println("3. Exportar Reporte 3: Analisis de Cumplimiento de Presupuesto");
         System.out.println("4. Exportar Reporte 4: Estado de Obligaciones Fijas");
-        System.out.println("5. Exportar Reporte 5: Proyeccion de Gastos a Fin de Mes");
-        System.out.println("6. Exportar Reporte 6: Analisis Historico y Promedio de Gastos");
         System.out.println("0. Volver al menu principal");
     }
 
@@ -64,12 +62,6 @@ public class ReportesMenu extends MenuBase {
                 break;
             case 4:
                 generarReporteObligaciones();
-                break;
-            case 5:
-                generarReporteProyeccion();
-                break;
-            case 6:
-                generarReportePromedio();
                 break;
             case 0:
                 return true;
@@ -329,104 +321,6 @@ public class ReportesMenu extends MenuBase {
                     }
                 }
                 document.add(tabla);
-                document.close();
-                System.out.println("Exito: Se ha generado el archivo " + archivo);
-            } catch (Exception e) {
-                System.out.println("Error al generar PDF: " + e.getMessage());
-            }
-        } catch (MenuHelper.OperacionCanceladaException e) {
-            System.out.println("\n[!] Operacion cancelada por el usuario.\n");
-        }
-    }
-
-    private void generarReporteProyeccion() {
-        try {
-            int idUsuario = obtenerIdUsuario();
-            System.out.println("\n=================================================");
-            System.out.println("          DIRECTORIO DE SUBCATEGORIAS            ");
-            System.out.println("=================================================");
-            Map<Integer, String> categorias = categoriaDAO.obtenerCategoriasPorTipo(idUsuario, "INGRESO");
-            categorias.putAll(categoriaDAO.obtenerCategoriasPorTipo(idUsuario, "GASTO"));
-            for (Map.Entry<Integer, String> entry : categorias.entrySet()) {
-                System.out.println("\n-> Categoria ID: " + entry.getKey() + " | Nombre: " + entry.getValue());
-                subcategoriaDAO.listarSubcategorias(entry.getKey());
-            }
-            System.out.println("=================================================");
-            int idSubcategoria = MenuHelper.leerEntero(scanner, "ID de la subcategoria");
-            short anio = MenuHelper.leerShort(scanner, "Anio (Ej. 2026)");
-            short mes = MenuHelper.leerMes(scanner, "Mes (1-12)");
-            String archivo = "Reporte_5_Proyeccion_Gasto_U" + idSubcategoria + "_" + anio + "_" + mes + ".pdf";
-            
-            try (Connection conn = Database.obtenerConexion()) {
-                Document document = new Document();
-                PdfWriter.getInstance(document, new FileOutputStream(archivo));
-                document.open();
-                document.add(new Paragraph("Reporte 5: Proyeccion de Gasto a Fin de Mes", fontTitulo));
-                document.add(new Paragraph("Subcategoria ID: " + idSubcategoria + " | Periodo: " + mes + "/" + anio + "\n\n", fontNormal));
-                String sqlPadre = "{ call fn_obtener_categoria_por_subcategoria(?) }";
-                try (CallableStatement csP = conn.prepareCall(sqlPadre)) {
-                    csP.setInt(1, idSubcategoria);
-                    try (ResultSet rsP = csP.executeQuery()) {
-                        if (rsP.next()) {
-                            document.add(new Paragraph("ID Categoria Padre Mapeada: " + rsP.getInt(1), fontNormal));
-                        }
-                    }
-                }
-                String sqlProy = "{ call fn_calcular_proyeccion_gasto_mensual(?, ?, ?) }";
-                try (CallableStatement cs = conn.prepareCall(sqlProy)) {
-                    cs.setInt(1, idSubcategoria);
-                    cs.setShort(2, anio);
-                    cs.setShort(3, mes);
-                    try (ResultSet rs = cs.executeQuery()) {
-                        if (rs.next()) {
-                            document.add(new Paragraph("\nSegun su ritmo de consumo diario actual, al finalizar el mes el gasto estimado sera de:", fontNormal));
-                            document.add(new Paragraph("L. " + rs.getBigDecimal(1), fontRojo));
-                        }
-                    }
-                }
-                document.close();
-                System.out.println("Exito: Se ha generado el archivo " + archivo);
-            } catch (Exception e) {
-                System.out.println("Error al generar PDF: " + e.getMessage());
-            }
-        } catch (MenuHelper.OperacionCanceladaException e) {
-            System.out.println("\n[!] Operacion cancelada por el usuario.\n");
-        }
-    }
-
-    private void generarReportePromedio() {
-        try {
-            int idUsuario = obtenerIdUsuario();
-            System.out.println("\n=================================================");
-            System.out.println("          DIRECTORIO DE SUBCATEGORIAS            ");
-            System.out.println("=================================================");
-            Map<Integer, String> categorias = categoriaDAO.obtenerCategoriasPorTipo(idUsuario, "INGRESO");
-            categorias.putAll(categoriaDAO.obtenerCategoriasPorTipo(idUsuario, "GASTO"));
-            for (Map.Entry<Integer, String> entry : categorias.entrySet()) {
-                System.out.println("\n-> Categoria ID: " + entry.getKey() + " | Nombre: " + entry.getValue());
-                subcategoriaDAO.listarSubcategorias(entry.getKey());
-            }
-            System.out.println("=================================================");
-            int idSubcategoria = MenuHelper.leerEntero(scanner, "ID de la subcategoria");
-            int meses = MenuHelper.leerEntero(scanner, "Cantidad de meses a analizar");
-            String archivo = "Reporte_6_Promedio_Historico_U" + idUsuario + "_" + meses + ".pdf";
-            
-            try (Connection conn = Database.obtenerConexion();
-                 CallableStatement cs = conn.prepareCall("{ call fn_obtener_promedio_gasto_subcategoria(?, ?, ?) }")) {
-                cs.setInt(1, idUsuario);
-                cs.setInt(2, idSubcategoria);
-                cs.setInt(3, meses);
-                Document document = new Document();
-                PdfWriter.getInstance(document, new FileOutputStream(archivo));
-                document.open();
-                document.add(new Paragraph("Reporte 6: Analisis Historico y Promedio", fontTitulo));
-                document.add(new Paragraph("Analisis de los ultimos " + meses + " meses.\n\n", fontNormal));
-                try (ResultSet rs = cs.executeQuery()) {
-                    if (rs.next()) {
-                        document.add(new Paragraph("El promedio de gasto en esta subcategoria a lo largo del tiempo indicado es de:", fontNormal));
-                        document.add(new Paragraph("L. " + rs.getBigDecimal(1), fontSubtitulo));
-                    }
-                }
                 document.close();
                 System.out.println("Exito: Se ha generado el archivo " + archivo);
             } catch (Exception e) {
